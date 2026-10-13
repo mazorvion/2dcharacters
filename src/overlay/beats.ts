@@ -224,7 +224,7 @@ function acting(overlay: HTMLElement): BeatView {
 type BeatUi = { v: BeatView; path: SVGPathElement; a: Pt; box: { x: number; y: number; w: number; h: number } };
 
 /** Leader: part → elbow → card edge, drawn in (dash offset) as the card appears. */
-function drawLeader(u: BeatUi, vis: number, portrait: boolean) {
+function drawLeader(u: BeatUi, vis: number, portrait: boolean, alpha: number) {
   const { x, y, w } = u.box;
   let d: string, len: number;
   if (portrait) {
@@ -239,11 +239,11 @@ function drawLeader(u: BeatUi, vis: number, portrait: boolean) {
   }
   u.path.setAttribute('d', d);
   if (u.v.thought) {
-    u.path.style.opacity = vis.toFixed(3);
+    u.path.style.opacity = (vis * alpha).toFixed(3);
   } else {
     u.path.style.strokeDasharray = len.toFixed(1);
     u.path.style.strokeDashoffset = (len * (1 - smooth(vis))).toFixed(1);
-    u.path.style.opacity = '1';
+    u.path.style.opacity = alpha.toFixed(3);
   }
 }
 
@@ -269,10 +269,12 @@ export function createBeats(overlay: HTMLElement, lines: SVGSVGElement, stage: S
     for (const u of ui) {
       const vis = state.vis[u.v.beat];
       setVis(u.v.card, vis);
-      u.dot.style.opacity = u.v.noLeader ? '0' : vis.toFixed(3);
-      if (u.v.layer) setVis(u.v.layer, vis);
       if (vis <= 0.001 || u.v.noLeader) u.path.style.opacity = '0';
-      if (vis <= 0.001) continue;
+      if (vis <= 0.001) {
+        u.dot.style.opacity = '0';
+        if (u.v.layer) setVis(u.v.layer, 0);
+        continue;
+      }
       const part = stage.rig.parts[u.v.part].object;
       stage.projectPoint(part.localToWorld(v3.set(...u.v.local)), u.a);
       // the card lives in the DOM column: read where it actually is, in stage coordinates
@@ -281,9 +283,15 @@ export function createBeats(overlay: HTMLElement, lines: SVGSVGElement, stage: S
       const rise = (1 - smooth(vis)) * 14;
       u.box.x = r.left - origin.left; u.box.y = r.top - origin.top - parseFloat(u.v.card.dataset.rise ?? '0');
       u.box.w = r.width; u.box.h = r.height;
+      // The card scrolls with the page while the scrubbed timeline trails the scroll a little: on a
+      // fast scroll the card can already be leaving the screen while its beat is still fading out.
+      // Lines and flying bits fade with the share of the card still on screen.
+      const onScreen = Math.min(1, Math.max(0, (Math.min(stage.height, u.box.y + u.box.h) - Math.max(0, u.box.y)) / Math.max(1, u.box.h)));
+      u.dot.style.opacity = u.v.noLeader ? '0' : (vis * onScreen).toFixed(3);
+      if (u.v.layer) setVis(u.v.layer, vis * onScreen);
       u.v.card.style.transform = rise > 0.01 ? `translate3d(0,${rise.toFixed(1)}px,0)` : '';
       u.v.card.dataset.rise = rise.toFixed(1);
-      if (!u.v.noLeader) drawLeader(u, vis, portrait);
+      if (!u.v.noLeader) drawLeader(u, vis, portrait, onScreen);
       u.dot.setAttribute('cx', u.a.x.toFixed(1));
       u.dot.setAttribute('cy', u.a.y.toFixed(1));
       u.v.update(state.prog[u.v.beat], stage.time, u.a, u.box);
