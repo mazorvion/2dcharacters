@@ -20,7 +20,21 @@ const EYE_BIG: Sprite = [
   '..XXXX..', '.X....X.', 'X......X', 'X......X', 'X......X', 'X......X', '.X....X.', '..XXXX..'];
 // 4-wide pink mouth with a lighter top highlight (L)
 const MOUTH: Sprite = ['XLLX', 'XXXX', '.XX.'];
-const MOUTH_TALK: Sprite[] = [['.X.', 'X.X', '.X.'], ['...', 'XXX', '...']];
+// Talking: visemes built from the idle mouth, so it reads as the same mouth opening and closing.
+// All 4 wide and stamped from the top row down (the jaw drops; the top lip stays put).
+const V_CLOSED: Sprite = ['XLLX', '.XX.'];
+const V_HALF: Sprite = ['XLLX', 'XXXX', '.XX.'];
+const V_OPEN: Sprite = ['XLLX', 'X..X', 'X..X', '.XX.'];
+const V_WIDE: Sprite = ['XLLX', 'X..X', 'X..X', 'X..X', '.XX.'];
+const V_OO: Sprite = ['.LL.', 'X..X', 'X..X', '.XX.'];
+const V_EE: Sprite = ['XLLX', 'XXXX'];
+/** One spoken phrase at 11 fps: syllables of varied openness, then a short breath (closed). */
+const TALK: Sprite[] = [
+  V_HALF, V_OPEN, V_WIDE, V_OPEN, V_HALF, V_EE, V_HALF, V_OO, V_OPEN, V_HALF,
+  V_CLOSED, V_HALF, V_WIDE, V_OPEN, V_EE, V_HALF, V_OPEN, V_OO, V_HALF, V_CLOSED,
+  V_CLOSED, V_CLOSED, V_HALF, V_OPEN, V_HALF, V_WIDE, V_OPEN, V_EE, V_EE, V_HALF,
+  V_OO, V_OPEN, V_HALF, V_CLOSED, V_CLOSED, V_CLOSED, V_CLOSED,
+];
 const MOUTH_SMILE: Sprite = ['X...X', '.XXX.'];
 const MOUTH_O: Sprite = ['.X.', 'X.X', '.X.'];
 const LOCK: Sprite = [
@@ -93,7 +107,7 @@ export class Face {
   update(time: number): boolean {
     const e = this.expression;
     let frame = 0;
-    if (e === 'talking') frame = Math.floor(time * 8) % 2;
+    if (e === 'talking') frame = Math.floor(time * 11) % TALK.length;
     else if (e === 'listening' || e === 'thinking') frame = Math.floor(time * 6) % 12;
     else if (e === 'working') frame = Math.floor(time * 12) % 12;
     const px = Math.round(this.pupil.x), py = Math.round(this.pupil.y);
@@ -114,6 +128,10 @@ export class Face {
         if (s[y][x] === 'X') this.set(x0 + x, y0 + y, v);
         else if (s[y][x] === 'L') this.set(x0 + x, y0 + y, 3);
   }
+  /** Stamp with the sprite's top row at y (mouths that open downward). */
+  private stampTop(s: Sprite, cx: number, y: number) {
+    this.stamp(s, cx, y + Math.floor(s.length / 2), 2);
+  }
   /** Horizontal shift (px) of the mouth layer, so odd-width mouths centre on the face. */
   private halfShift = 0;
   private set(x: number, y: number, v: number) {
@@ -133,7 +151,14 @@ export class Face {
       case 'happy': eyes(EYE_HAPPY); this.stamp(MOUTH_SMILE, MX, M, 2); break;
       case 'surprised': eyes(blink ? EYE_BLINK : EYE_BIG); this.stamp(MOUTH_O, MX, M, 2); break;
       case 'love': eyes(EYE_HEART); this.stamp(MOUTH_SMILE, MX, M, 2); break;
-      case 'talking': eyes(blink ? EYE_BLINK : EYE_RING); this.stamp(MOUTH_TALK[frame], MX, M, 2); break;
+      case 'talking': {
+        // eyes squint a touch on the widest syllables, like someone mid-sentence
+        const v = TALK[frame];
+        eyes(blink ? EYE_BLINK : EYE_RING, v === V_WIDE ? -1 : 0);
+        this.stampTop(v, MX, M - 1);
+        this.halfShift = CELL / 2;
+        break;
+      }
       case 'thinking': {
         eyes(blink ? EYE_BLINK : EYE_RING, -2);
         const active = Math.floor(frame / 3) % 4; // 0..3 → dots light up one by one

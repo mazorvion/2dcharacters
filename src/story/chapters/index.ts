@@ -86,7 +86,9 @@ const exploded: Chapter = {
     const o = ctx.openShot;
     camTo(tl, { ...o, yaw: 16, pitch: 5, radius: o.radius * 0.94 }, at, dur, 'sine.inOut');
     to(tl, { callouts: 1 }, at + dur * 0.22, dur * 0.5, 'power1.inOut');
+    // the floating face starts talking as its Speaking label draws in (top label, drawn first)
     set(tl, { face: 'idle' }, at);
+    set(tl, { face: 'talking' }, at + dur * 0.24);
   },
 };
 
@@ -109,14 +111,26 @@ const assemble: Chapter = {
   },
 };
 
-// 2 · Speaking: hops to the left, low push-in on the screen while the voice plays on the right.
+// 2 · Speaking: hops to the left, low push-in on the face while the voice plays on the right. The
+// mouth moves while each line types out and rests between them.
 const speaking: Chapter = {
   id: 'speaking',
-  build: beat({
-    beat: 'speaking', frame: ['body', 'screen'],
-    from: { yaw: -34, pitch: -8, rScale: 1.12 }, drift: { yaw: -16, pitch: 2, rScale: 0.98 },
-    faces: [[0.32, 'talking'], [0.88, 'happy']],
-  }),
+  build(tl, at, dur, ctx) {
+    const n = CONTENT.speaking.lines.length;
+    const span = dur * (CONTENT_OUT - CONTENT_IN - 0.04);
+    const faces: [number, Expression][] = [[0.3, 'idle']];
+    for (let k = 0; k < n; k++) {
+      // same windows as the typed bubbles in overlay/beats.ts
+      const a = itemAt(k, n), z = itemAt(k + 1, n);
+      faces.push([CONTENT_IN + (span * a) / dur, 'talking'], [CONTENT_IN + (span * (a + (z - a) * 0.7)) / dur, 'idle']);
+    }
+    faces.push([0.88, 'happy']);
+    beat({
+      beat: 'speaking', frame: ['body', 'screen'],
+      from: { yaw: -34, pitch: -8, rScale: 1.12 }, drift: { yaw: -16, pitch: 2, rScale: 0.98 },
+      faces,
+    })(tl, at, dur, ctx);
+  },
 };
 
 // 3 · Hearing: crosses to the right and turns its sensory patch toward the transcript on the left.

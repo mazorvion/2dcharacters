@@ -53,7 +53,7 @@ export const CONTENT = {
 
   /** Opening diagram labels (drawn by default): the five capabilities, each on the part that does it. */
   callouts: [
-    { part: 'speaker', title: 'Speaking', sub: 'Speaker · your cloned voice' },
+    { part: 'screen', title: 'Speaking', sub: 'Face screen · talks in your voice' },
     { part: 'patchL', title: 'Hearing', sub: 'Sensory patches · listens in real time' },
     { part: 'chassis', title: 'Thinking', sub: 'Main board · reasons before replying' },
     { part: 'memory', title: 'Knowledge', sub: 'Memory · PDFs, sites, docs' },
