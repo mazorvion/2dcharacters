@@ -1,0 +1,35 @@
+/* Blueprint paper: faint grid, centre marks, diagram title. Opacity follows state.blueprint. */
+#double-story .paper { background: var(--ground); }
+#double-story .paper::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: var(--blueprint);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(21,23,43,.07) 0 1px, transparent 1px 120px),
+    repeating-linear-gradient(90deg, rgba(21,23,43,.07) 0 1px, transparent 1px 120px),
+    repeating-linear-gradient(0deg, rgba(21,23,43,.035) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, rgba(21,23,43,.035) 0 1px, transparent 1px 24px);
+  background-position: center center;
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 52%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 75% at 50% 52%, #000 40%, transparent 100%);
+}
+
+#double-story .blueprint-frame {
+  --inset: clamp(14px, 1.8vw, 26px);
+  opacity: var(--blueprint);
+  pointer-events: none;
+}
+#double-story .mark { position: absolute; width: 0; height: 0; border: 5px solid transparent; }
+#double-story .mark.t { top: var(--inset); left: 50%; margin-left: -5px; border-top-color: rgba(21,23,43,.25); }
+#double-story .mark.b { bottom: var(--inset); left: 50%; margin-left: -5px; border-bottom-color: rgba(21,23,43,.25); }
+#double-story .mark.l { left: var(--inset); top: 50%; margin-top: -5px; border-left-color: rgba(21,23,43,.25); }
+#double-story .mark.r { right: var(--inset); top: 50%; margin-top: -5px; border-right-color: rgba(21,23,43,.25); }
+#double-story .diagram-title {
+  position: absolute; margin: 0;
+  top: calc(var(--inset) + 8px); right: calc(var(--inset) + 16px);
+  font: 400 11px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+#double-story .diagram-title b { font-weight: 600; color: var(--ink); }
+@media (max-aspect-ratio: 4/5) {
+  #double-story .diagram-title { display: none; }
+}

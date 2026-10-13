@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>The cast · TheDouble.ai</title>
+    <meta name="description" content="The Double's block-built cast: rigged, posable characters for site animation and video." />
+    <meta name="theme-color" content="#f6f4ef" />
+  </head>
+  <body class="cast-page">
+    <header class="cast-head">
+      <p class="eyebrow"><i class="sq"></i>The Double · Cast</p>
+      <h1>Built <em>block by block.</em></h1>
+    </header>
+    <canvas id="cast-gl" aria-label="Two block-built characters: him in a cobalt shirt, her in a charcoal jacket and cobalt trousers"></canvas>
+    <nav class="cast-ui" aria-label="Character controls">
+      <div class="seg" data-group="show" role="group" aria-label="Show"></div>
+      <div class="seg" data-group="pose" role="group" aria-label="Pose"></div>
+      <div class="seg">
+        <button type="button" data-toggle="idle">idle</button>
+        <button type="button" data-toggle="turntable">turntable</button>
+      </div>
+      <div class="seg">
+        <button type="button" data-action="front">front view</button>
+        <button type="button" data-action="png">save png</button>
+      </div>
+    </nav>
+    <script type="module" src="/src/characters/main.ts"></script>
+  </body>
+</html>
