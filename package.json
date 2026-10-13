@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "icons": "node scripts/build-icons.ts"
+    "icons": "node scripts/build-icons.ts",
+    "cast:lint": "node scripts/cast/lint.ts",
+    "cast:shot": "node scripts/cast/shot.ts",
+    "cast:render": "node scripts/cast/render.ts"
   },
   "dependencies": {
     "@fontsource-variable/funnel-display": "^5.3.0",
