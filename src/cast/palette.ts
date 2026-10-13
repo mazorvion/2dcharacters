@@ -33,6 +33,7 @@ export const INK = {
   ink: '#1b1718',
   tongue: '#f08aa8',
   tongueDeep: '#d86f8e',
+  teeth: '#f7f5f2',
 };
 
 export const BACKGROUND = {

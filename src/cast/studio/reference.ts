@@ -53,9 +53,10 @@ export function referenceClasses(img: HTMLImageElement, rig: Rig): string[] {
           const R = data[i], G = data[i + 1], B = data[i + 2];
           const lum = 0.299 * R + 0.587 * G + 0.114 * B;
           let k = 'W';
-          if (B > R + 38 && B > G + 26) k = 'B';
+          // cobalt by hue (lit bead tops stay cobalt); background by warmth (lit white felt is neutral)
+          if (B > R + 30 && B > G + 20) k = 'B';
           else if (G > 150 && R > 120 && B < 110 && G > B + 80) k = 'L';
-          else if (lum > 236 && R - B > 3) k = '.';
+          else if (lum > 225 && R - B >= 6) k = '.';
           else if (lum < 115) k = 'K';
           n[k]++; total++;
         }
