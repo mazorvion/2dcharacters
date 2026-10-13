@@ -1,6 +1,6 @@
 // Draws one posed character (CHARACTERS.md §8.2): cached part bitmaps, relief shadows, face ink.
 // Bead layers only ever move by whole beads and are never rotated or scaled (D5).
-import { CANVAS_H, CANVAS_W, BASELINE, bounds, mirrorRows, type Grid } from '../grid.ts';
+import { CANVAS_H, CANVAS_W, BASELINE, bounds, cellOf, mirrorRows, type Grid } from '../grid.ts';
 import type { FrameState, PartName, Rig } from '../types.ts';
 import { drawFace } from './ink.ts';
 import { makeCanvas, renderLayer, silhouette, type Layer } from './beads.ts';
@@ -14,7 +14,7 @@ export type Drawings = Partial<Record<PartName, Record<string, Grid>>>;
 const MARGIN = 2; // beads around the 80 × 96 canvas, for shadows and offsets
 
 export interface DrawOptions {
-  /** Relief shadow of front parts onto the parts behind (default on). */
+  /** Relief shadow of front parts onto the parts behind (default off). */
   relief?: boolean;
   /** Soft contact shadow on the ground under the shoes (default on). */
   ground?: boolean;
@@ -29,6 +29,7 @@ export interface DrawOptions {
 const PART_TINT: Record<PartName, string> = {
   hairBack: '#8a5cff', head: '#ff9a3d', hairFront: '#c03dff', torso: '#2fbf71', earring: '#ffe03d',
   armScreenL: '#3db5ff', armScreenR: '#ff4f8b', legScreenL: '#00a3a3', legScreenR: '#a36b00',
+  features: '#000000', eyes: '#000000',
 };
 
 export class CharacterRenderer {
@@ -48,11 +49,18 @@ export class CharacterRenderer {
     return flip ? mirrorRows(g.rows) : g.rows;
   }
 
+  /** Bead size of a drawing in canvas beads (1, or 0.5 for the half-size face blocks). */
+  cell(part: PartName, name: string): number {
+    const g = this.drawings[part]?.[name];
+    return g ? cellOf(g) : 1;
+  }
+
   private layer(part: PartName, name: string, S: number, flip: boolean) {
     const key = `${part}.${name}@${S}${flip ? 'f' : ''}`;
     if (!this.layers.has(key)) {
       const rows = this.rows(part, name, flip);
-      const layer = rows && renderLayer(rows, S, `${this.rig.id}/${part}.${name}${flip ? 'f' : ''}`);
+      const s = Math.max(1, Math.round(S * this.cell(part, name)));
+      const layer = rows && renderLayer(rows, s, `${this.rig.id}/${part}.${name}${flip ? 'f' : ''}`);
       this.layers.set(key, layer ? { layer, shadow: silhouette(layer) } : null);
     }
     return this.layers.get(key) ?? null;
@@ -84,15 +92,16 @@ export class CharacterRenderer {
     const f = this.frame.getContext('2d') as Ctx;
     f.setTransform(1, 0, 0, 1, 0, 0);
     f.clearRect(0, 0, W, H);
-    const relief = opt.relief !== false && !opt.tintParts;
+    const relief = opt.relief === true && !opt.tintParts; // off by default: it drew seams where parts meet
     for (const part of this.rig.order) {
       if (opt.only && !opt.only.includes(part)) continue;
       const name = this.drawingFor(part, state);
       const l = name ? this.layer(part, name, S, state.flip) : null;
       if (l) {
         const [dx, dy] = this.offsetOf(part, state);
-        const px = (l.layer.c0 + dx + MARGIN) * S, py = (l.layer.r0 + dy + MARGIN) * S;
-        if (relief) {
+        const k = this.cell(part, name!);
+        const px = (l.layer.c0 * k + dx + MARGIN) * S, py = (l.layer.r0 * k + dy + MARGIN) * S;
+        if (relief && k === 1) {
           // the part's soft shadow lands only on what is already drawn (the parts behind it)
           f.save();
           f.globalCompositeOperation = 'source-atop';

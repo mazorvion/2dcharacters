@@ -71,8 +71,15 @@ function drawGridLines(c: CanvasRenderingContext2D, S: number, x: number, y: num
   c.restore();
 }
 
-async function drawCharacter(c: CanvasRenderingContext2D, id: CharId, S: number, x: number, y: number) {
+/** A rig's own bead size at zoom S, and where its canvas goes so baselines and centres line up. */
+function placed(id: CharId, S: number, x: number, y: number): [number, number, number] {
+  const s = Math.max(1, Math.round(S * (RIGS[id].scale ?? 1)));
+  return [s, x + 40 * (S - s), y + 93 * (S - s)];
+}
+
+async function drawCharacter(c: CanvasRenderingContext2D, id: CharId, S0: number, x0: number, y0: number) {
   const r = renderers[id];
+  const [S, x, y] = placed(id, S0, x0, y0);
   const img = st.ref || st.diff ? await loadImage(r.rig.ref.image).catch(() => null) : null;
   if (img && st.ref && !st.diff) {
     c.save(); c.globalAlpha = 1; drawReference(c, img, r.rig, S, x, y); c.restore();
@@ -206,7 +213,7 @@ function flatten(id: CharId, frame: FrameState): string[][] {
   const g = Array.from({ length: CANVAS_H }, () => Array<string>(CANVAS_W).fill('.'));
   for (const part of r.rig.order) {
     const name = r.drawingFor(part, frame);
-    const rows = name && r.rows(part, name, frame.flip);
+    const rows = name && r.cell(part, name) === 1 && r.rows(part, name, frame.flip);
     if (!rows) continue;
     const [dx, dy] = r.offsetOf(part, frame);
     rows.forEach((row, y) => {
@@ -227,7 +234,7 @@ function framePNG(ids: CharId[], S: number, frames?: Partial<Record<CharId, Fram
   out.width = wBeads * S; out.height = CANVAS_H * S;
   const c = out.getContext('2d')!;
   if (bg) { c.fillStyle = bg; c.fillRect(0, 0, out.width, out.height); }
-  ids.forEach((id, i) => renderers[id].draw(c, frames?.[id] ?? frameOf(id), S, i * GAP * S, 0));
+  ids.forEach((id, i) => renderers[id].draw(c, frames?.[id] ?? frameOf(id), ...placed(id, S, i * GAP * S, 0)));
   return out.toDataURL('image/png');
 }
 

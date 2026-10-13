@@ -37,7 +37,7 @@ def pixel_classes(img):
     cls[lum < 175] = 'g'
     cls[lum < 115] = 'K'
     cls[(lum > 236) & (r - b > 3)] = '.'
-    cls[(b > r + 38) & (b > g + 26)] = 'B'
+    cls[(b > r + 30) & (b > g + 20)] = 'B'                          # cobalt by hue: lit bead tops stay cobalt
     cls[(g > 150) & (r > 120) & (b < 110) & (g > b + 80)] = 'L'
     cls[(r > 180) & (g < 185) & (b > 120) & (r > g + 35)] = 'W'      # tongue → skin (faces are ink)
     return cls, lum

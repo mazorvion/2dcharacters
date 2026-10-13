@@ -24,6 +24,7 @@ export const MATERIALS: Record<string, Material> = {
   c: { name: 'cobalt-light', base: '#3a5cf0', groove: '#1a2fb0', kind: 'dark' },
   L: { name: 'lime', base: '#cbee32', groove: '#8fa816', kind: 'dark' },
   l: { name: 'lime-deep', base: '#a3c21c', groove: '#6f8510', kind: 'dark' },
+  M: { name: 'pink', base: '#f08aa8', groove: '#c96d88', kind: 'dark' },
 };
 
 /** Grid characters that are beads ('.' is empty). */

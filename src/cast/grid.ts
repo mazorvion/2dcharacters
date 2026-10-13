@@ -28,15 +28,22 @@ export function parseGrid(id: string, raw: string): Grid {
     if (line === '' && i >= lines.length - 1) return;
     rows.push(line);
   });
-  if (rows.length !== CANVAS_H) throw new GridError(`${id}: ${rows.length} rows, expected ${CANVAS_H}`);
+  // half-size grids (`# cell: 0.5`, the original face blocks) cover the same canvas at twice the resolution
+  const k = cellOf({ id, meta, rows }) === 0.5 ? 2 : 1;
+  if (rows.length !== CANVAS_H * k) throw new GridError(`${id}: ${rows.length} rows, expected ${CANVAS_H * k}`);
   rows.forEach((row, r) => {
-    if (row.length !== CANVAS_W) throw new GridError(`${id}:${r + 1}: ${row.length} columns, expected ${CANVAS_W}`);
+    if (row.length !== CANVAS_W * k) throw new GridError(`${id}:${r + 1}: ${row.length} columns, expected ${CANVAS_W * k}`);
     for (let c = 0; c < row.length; c++) {
       const ch = row[c];
       if (ch !== '.' && !BEAD_CHARS.includes(ch)) throw new GridError(`${id}:${r + 1}:${c + 1}: unknown character '${ch}'`);
     }
   });
   return { id, meta, rows };
+}
+
+/** Bead size of a grid in canvas beads: 1, or 0.5 for half-size grids. */
+export function cellOf(g: Grid): number {
+  return g.meta.cell === '0.5' ? 0.5 : 1;
 }
 
 /** Bounding box of the beads in a grid: [c0, r0, c1, r1) or null when empty. */

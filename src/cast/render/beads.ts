@@ -102,18 +102,14 @@ export function renderLayer(rows: string[], S: number, seed: string): Layer | nu
   const canvas = makeCanvas((bc1 - bc0 + PAD * 2) * S, (br1 - br0 + PAD * 2) * S);
   const ctx = ctx2d(canvas);
   const at = (r: number, c: number) => (rows[r]?.[c] ?? '.');
-  const g = INSET * S;
-  // grooves first: each bead's full square in its groove colour, pulled in where the neighbour is empty,
-  // so grooves read inside a region and the silhouette has no dark halo
+  // grooves first: each bead's full square in its groove colour, so grooves read as dark corner dots inside a
+  // region and parts that meet leave no seam
   for (let r = br0; r < br1; r++) {
     for (let c = bc0; c < bc1; c++) {
       const ch = at(r, c);
       if (ch === '.') continue;
-      const x = (c - c0) * S, y = (r - r0) * S;
-      const l = at(r, c - 1) === '.' ? g : 0, t = at(r - 1, c) === '.' ? g : 0;
-      const rr = at(r, c + 1) === '.' ? g : 0, bb = at(r + 1, c) === '.' ? g : 0;
       ctx.fillStyle = MATERIALS[ch].groove;
-      ctx.fillRect(x + l, y + t, S - l - rr, S - t - bb);
+      ctx.fillRect((c - c0) * S, (r - r0) * S, S, S);
     }
   }
   // then the beads

@@ -5,7 +5,7 @@ export type CharId = 'him' | 'her';
 
 export type PartName =
   | 'hairBack' | 'head' | 'hairFront' | 'torso' | 'earring'
-  | 'armScreenL' | 'armScreenR' | 'legScreenL' | 'legScreenR';
+  | 'armScreenL' | 'armScreenR' | 'legScreenL' | 'legScreenR' | 'features' | 'eyes';
 
 /** [c0, r0, c1, r1) in canvas beads. */
 export type Box = [number, number, number, number];
@@ -59,6 +59,8 @@ export interface Rig {
   ref: { image: string; beadPx: number; cell0: [number, number] };
   /** Shoulder boxes: every drawing of an arm must match its rest drawing inside its box (cast:lint). */
   sockets?: Partial<Record<PartName, Box>>;
+  /** Bead size multiplier (the original art drew Her at slightly larger beads). */
+  scale?: number;
   /** Zoom regions for cast:shot. */
   regions: Record<string, Box>;
   /** When mirrored: drawings to swap in (e.g. her earring to the newly visible ear). */

@@ -2,7 +2,7 @@
 //   npm run cast:lint            → problems as `file:line:col (row,col) message`; exits 1 if any
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseGrid, GridError, CANVAS_W, CANVAS_H, type Grid } from '../../src/cast/grid.ts';
+import { parseGrid, GridError, cellOf, CANVAS_W, CANVAS_H, type Grid } from '../../src/cast/grid.ts';
 import { HIM } from '../../src/cast/art/him/rig.ts';
 import { HER } from '../../src/cast/art/her/rig.ts';
 import type { PartName, Rig } from '../../src/cast/types.ts';
@@ -35,7 +35,9 @@ function lintChar(rig: Rig) {
     const raw = readFileSync(join(dir, f), 'utf8');
     const id = f.replace(/\.txt$/, '');
     try {
-      grids.set(id, { grid: parseGrid(`${rig.id}/${id}`, raw), file: join(dir, f), head: headerLines(raw) });
+      const grid = parseGrid(`${rig.id}/${id}`, raw);
+      if (cellOf(grid) !== 1) continue;      // half-size face blocks: format check only
+      grids.set(id, { grid, file: join(dir, f), head: headerLines(raw) });
     } catch (e) {
       problems.push(`${join(dir, f)}: ${e instanceof GridError ? e.message : String(e)}`);
     }
