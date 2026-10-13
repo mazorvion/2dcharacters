@@ -12,6 +12,8 @@ import { renderLayer } from '../render/beads.ts';
 import { BACKGROUND, MATERIALS } from '../palette.ts';
 import { CANVAS_W, CANVAS_H } from '../grid.ts';
 import { EXPRESSIONS, POSES, frameFor } from '../anim/poses.ts';
+import { CLIPS } from '../anim/clips.ts';
+import { sample } from '../anim/clip.ts';
 import type { Box, CharId, FaceState, FrameState, PartName } from '../types.ts';
 import { coarse, drawReference, loadImage, referenceClasses } from './reference.ts';
 
@@ -303,6 +305,57 @@ toggles([
   ui.append(el);
 }
 
+// clip player: plays at the clip's fps; step moves one frame
+const clipUI = document.createElement('div');
+clipUI.className = 'seg';
+clipUI.innerHTML = `<label class="range">clip <select aria-label="Clip"><option value="">—</option>${Object.keys(CLIPS).map((c) => `<option>${c}</option>`).join('')}</select></label>
+  <button type="button" data-a="play">play</button><button type="button" data-a="step">step</button><span class="range" data-frame>0</span>`;
+ui.append(clipUI);
+const player = { clip: '', f: 0, playing: false, last: 0 };
+const showFrame = () => {
+  const c = CLIPS[player.clip];
+  clipUI.querySelector('[data-frame]')!.textContent = c ? `${player.f} / ${c.length}` : '0';
+  void api.setFrames(c ? sample(c, player.f) : null);
+};
+clipUI.querySelector('select')!.addEventListener('change', (e) => { player.clip = (e.target as HTMLSelectElement).value; player.f = 0; showFrame(); });
+clipUI.addEventListener('click', (e) => {
+  const a = (e.target as HTMLElement).closest('button')?.dataset.a;
+  const c = CLIPS[player.clip];
+  if (!a || !c) return;
+  if (a === 'play') { player.playing = !player.playing; player.last = performance.now(); }
+  if (a === 'step') { player.playing = false; player.f = (player.f + 1) % c.length; showFrame(); }
+});
+const tick = (now: number) => {
+  const c = CLIPS[player.clip];
+  if (player.playing && c && now - player.last >= 1000 / c.fps) {
+    player.last = now;
+    player.f = (player.f + 1) % c.length;
+    showFrame();
+  }
+  requestAnimationFrame(tick);
+};
+requestAnimationFrame(tick);
+
+/**
+ * One frame of a clip as a PNG at w × h (cast:render). Characters are centred with their feet near the
+ * bottom; S is the largest whole bead size that fits, so beads are never resampled.
+ */
+function renderFrame(clip: string, f: number, w = 1920, h = 1080, bg?: string): string {
+  const c = CLIPS[clip];
+  const frames = sample(c, f);
+  const ids = (Object.keys(c.tracks) as CharId[]).filter((id) => frames[id]);
+  const wBeads = (ids.length - 1) * GAP + CANVAS_W + 8, hBeads = 80;
+  const S = Math.max(1, Math.floor(Math.min(w / wBeads, h / hBeads)));
+  const out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  const ctx2 = out.getContext('2d')!;
+  if (bg) { ctx2.fillStyle = bg; ctx2.fillRect(0, 0, w, h); }
+  const x0 = Math.round((w - ((ids.length - 1) * GAP + CANVAS_W) * S) / 2);
+  const y0 = Math.round(h - 96 * S + 2 * S - h * 0.04);
+  ids.forEach((id, i) => renderers[id].draw(ctx2, frames[id]!, ...placed(id, S, x0 + i * GAP * S, y0)));
+  return out.toDataURL('image/png');
+}
+
 // face controls: one select per face element of the shown character (only when one character is shown)
 const faceUI = document.querySelector<HTMLElement>('.cast-face')!;
 function rebuildFaceUI() {
@@ -342,7 +395,7 @@ void draw();
 if (import.meta.hot) import.meta.hot.accept(() => location.reload());
 
 const api = {
-  renderers, st, draw, shot, swatchShot, framePNG, frameFor, RIGS,
+  renderers, st, draw, shot, swatchShot, framePNG, frameFor, RIGS, CLIPS, renderFrame,
   /** Set per-character frame states (clip playback / export) and redraw. */
   setFrames(frames: Partial<Record<CharId, FrameState>> | null) { st.frames = frames; return draw(); },
 };

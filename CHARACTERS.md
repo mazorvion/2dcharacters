@@ -759,3 +759,18 @@ Run `npm run build` after every phase. Do not commit `.shots/cast/` or `.out/`.
 | Film aspect ratios | 16:9 4K and 9:16 4K. |
 | Voices / lip sync | Rhubarb on whatever voice-over WAV is provided. |
 | Bead colours vs brand cobalt | Reference felt colours (D8). |
+
+---
+
+## 13. Current state (supersedes parts of §3–§7 where they differ)
+
+- **Art:** the user's original sprite set (commit `5681cf6`) is the source of truth, rendered bead for bead with
+  the 2D renderer. Hand redrawing from the reference was tried and rejected; edit the existing part grids instead.
+- **Faces:** Him keeps his original half-size face blocks (`features`, `eyes`; `# cell: 0.5` grids). Her face is
+  vector ink traced from the reference (`art/her/face.ts`) because it reads better at film sizes.
+- **Bead size:** one size for both characters (Her's earlier 1.075 scale was removed).
+- **Poses:** new arm drawings are the original arms turned exactly 90° (`scripts/cast/dev/rot90.py`), so no
+  bead is ever redrawn. Him: `wave`, `blink` (his eye blocks collapsed to their bottom row).
+- **Clips:** `src/cast/anim/clips.ts` (`idle`, `wave`, `talk`, `duoHello`); `npm run cast:render -- <clip>`
+  writes MP4, ProRes 4444 `.mov` with alpha and VP9 `.webm` with alpha to `.out/<clip>/`. Renders are
+  deterministic (identical frames on re-render).
