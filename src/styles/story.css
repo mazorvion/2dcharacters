@@ -7,6 +7,7 @@
   --blueprint: 0;
   position: relative;
   isolation: isolate;
+  overflow-x: clip; /* copy slides in from the sides: never widen the host page (clip keeps sticky working) */
   background: var(--ground);
   color: var(--ink);
   font-family: var(--font-sans);
@@ -174,16 +175,7 @@
 #double-story[data-mode="static"] .demo { display: none; }
 #double-story[data-mode="static"] .eyebrow { margin-inline: auto; }
 
-/* ---------- demo page stand-ins for the neighbouring homepage sections ---------- */
-.filler {
-  display: grid; place-items: center; min-height: 70vh; padding: 10vh 24px;
-  background: var(--ground); color: var(--ink); text-align: center;
-}
-.filler h2 { margin: 0; max-width: 16ch; font: 700 var(--fs-section)/1.02 var(--font-display); letter-spacing: -.035em; }
-.filler h2 em { font-family: var(--font-human); font-style: italic; font-weight: 400; letter-spacing: -.03em; color: var(--cobalt); }
-
-html, body { margin: 0; background: var(--ground); }
-body { overflow-x: clip; }
+/* ---------- Lenis (smooth scroll) toggles these on <html> while it runs ---------- */
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }

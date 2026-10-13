@@ -1,0 +1,12 @@
+/* Demo page only (index.html): page chrome and stand-ins for the neighbouring homepage sections.
+   Not part of the website build. */
+html, body { margin: 0; background: var(--ground); }
+body { overflow-x: clip; }
+
+.filler {
+  display: grid; place-items: center; min-height: 70vh; padding: 10vh 24px;
+  background: var(--ground); color: var(--ink); text-align: center;
+}
+.filler h2 { margin: 0; max-width: 16ch; font: 700 var(--fs-section)/1.02 var(--font-display); letter-spacing: -.035em; }
+.filler h2 em { font-family: var(--font-human); font-style: italic; font-weight: 400; letter-spacing: -.03em; color: var(--cobalt); }
+

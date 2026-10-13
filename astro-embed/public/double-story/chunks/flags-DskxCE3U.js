@@ -1,0 +1,1 @@
+var e=new URLSearchParams(typeof location<`u`?location.search:``),t={debug:e.has(`debug`),poster:e.get(`poster`),noWebGL:e.has(`nowebgl`),tier:e.get(`tier`),explode:e.has(`explode`)?Number(e.get(`explode`)):null};export{t};

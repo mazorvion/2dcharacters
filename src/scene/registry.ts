@@ -1,10 +1,10 @@
 // Part contract shared by the procedural build and a future GLB (PLAN.md §5.1).
 // Outside parts follow reference/double-construction-sheet.webp; the internals (board, memory,
-// speaker, harness, screws) are what the exploded view reveals.
+// harness, screws) are what the exploded view reveals.
 import type * as THREE from 'three';
 
 export const PART_IDS = [
-  'body', 'screen', 'speaker', 'chassis', 'memory', 'harness',
+  'body', 'screen', 'chassis', 'memory', 'harness',
   'stemL', 'tipL', 'hook',
   'patchL', 'patchR',
   'armL', 'armR', 'clawL', 'clawR',

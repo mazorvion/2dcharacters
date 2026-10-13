@@ -17,7 +17,7 @@ export interface ExplodeEntry {
 /**
  * Front-view exploded layout (product feedback 2026-10-13: the story opens exploded, seen straight on,
  * with no labels). Every part sits in the picture plane around the body so the diagram reads from the
- * front: antennas above, screen + speaker + left patch/claw on the left, board + memory + right
+ * front: antennas above, screen + left patch/claw on the left, board + memory + right
  * patch/claw on the right, wiring between the antennas, feet below. Flat parts turn to face the camera.
  */
 export const EXPLODE: Record<PartId, ExplodeEntry> = {
@@ -25,7 +25,6 @@ export const EXPLODE: Record<PartId, ExplodeEntry> = {
   chassis: { at: [2.15, 0.62, 0.55],    rot: [0, 0, 5],    order: 0 },
   memory:  { at: [2.2, -0.42, 0.6],     rot: [0, 17, -6],  order: 0 },
   harness: { at: [0.18, 1.18, 0.45],    rot: [0, 0, 0],    order: 1 },
-  speaker: { at: [-2.2, -0.42, 0.6],    rot: [0, 0, 0],    order: 1 },
   screen:  { at: [-2.15, 0.62, 0.7],    rot: [0, 0, -4],   order: 2 },
   patchL:  { at: [-1.45, -0.1, 0.35],   rot: [0, 70, 0],   order: 3 },
   patchR:  { at: [1.45, -0.1, 0.35],    rot: [0, -70, 0],  order: 3 },

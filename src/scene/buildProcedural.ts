@@ -330,27 +330,6 @@ export function buildProcedural(mats: Materials, face: Face, opts: BuildOptions 
     (g.userData as { faceMesh: THREE.Mesh }).faceMesh = faceMesh;
   }
 
-  // ------------------------------------------------ speaker: driver behind the face screen (the voice)
-  {
-    const g = new THREE.Group();
-    const basket = new THREE.CylinderGeometry(0.2, 0.15, 0.08, 40);
-    basket.rotateX(Math.PI / 2);
-    const magnet = new THREE.CylinderGeometry(0.1, 0.1, 0.08, 28);
-    magnet.rotateX(Math.PI / 2);
-    magnet.translate(0, 0, -0.08);
-    g.add(mesh(merge([basket, magnet]), mats.chip, 'speaker_body'));
-    const cone = new THREE.CylinderGeometry(0.17, 0.06, 0.05, 40, 1, true);
-    cone.rotateX(-Math.PI / 2);
-    cone.translate(0, 0, 0.05);
-    const surround = new THREE.TorusGeometry(0.18, 0.018, 10, 48);
-    surround.translate(0, 0, 0.045);
-    const cap = new THREE.SphereGeometry(0.055, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-    cap.rotateX(Math.PI / 2);
-    cap.translate(0, 0, 0.03);
-    g.add(mesh(merge([cone, surround, cap]), mats.plastic, 'speaker_cone'));
-    addPart('speaker', g, V(-0.3, -0.12, 0.56), V(-0.16, 0.12, 0.04));
-  }
-
   // ------------------------------------------------ chassis: main board (PCB) with chips and glowing traces
   let chipsMat!: THREE.MeshStandardMaterial;
   {

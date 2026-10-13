@@ -7,10 +7,10 @@ import { initScroll } from '../core/scroll';
 import { buildTimeline } from './timeline';
 import { mountOverlays } from '../overlay';
 
-export function boot(root: HTMLElement): () => void {
+export function boot(root: HTMLElement, opts: { smoothScroll?: boolean } = {}): () => void {
   const canvas = root.querySelector<HTMLCanvasElement>('canvas.gl')!;
   const stage = new Stage(root, canvas);
-  const scroll = initScroll();
+  const scroll = initScroll(opts.smoothScroll ?? true);
   const overlays = mountOverlays(root, stage);
   const killTimeline = buildTimeline(root, stage);
   state.dirty = true;
@@ -18,7 +18,8 @@ export function boot(root: HTMLElement): () => void {
   ScrollTrigger.refresh();
 
   let killDebug: (() => void) | null = null;
-  if (flags.debug) {
+  // the website build compiles the panel out (__DOUBLE_DEBUG__ = false), so ?debug does nothing there
+  if (__DOUBLE_DEBUG__ && flags.debug) {
     import('../core/debug').then(({ startDebug }) => {
       killDebug = startDebug(stage, {
         pauseScroll(on) { ScrollTrigger.getAll().forEach((t) => (on ? t.disable(false) : t.enable())); },

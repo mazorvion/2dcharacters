@@ -488,6 +488,7 @@ Demo names and emails are fictional. The product team should review all copy.
 - ✅ The budgets in §6.1 are met. Lighthouse mobile Performance ≥ 85 and Accessibility ≥ 95.
 
 **P8 · Embed into thedouble.ai (Astro)**
+- **Done (2026-10-13):** `npm run build:astro` writes `astro-embed/`: a self-contained `public/double-story/` bundle (scoped CSS, lazy JS, optional fonts) and a generated `DoubleStory.astro` with the server-rendered markup. No packages needed in the Astro project; see `astro-embed/README.md`. Entries: `src/embed.ts` (website, auto-mounts, handles `astro:page-load` / `astro:before-swap`), `src/index.ts` (demo page), shared `src/mount.ts`.
 - Build `src/index.ts` as a library (`vite build --lib`, ESM). In Astro: `<section id="double-story">…static markup…</section><script>import { mount } from '@/lib/double-story'; mount(document.getElementById('double-story'));</script>`. The static markup can be generated from `content.ts` in an `.astro` component, so the copy is server-rendered.
 - ✅ It runs inside the Astro page with no style leakage (all CSS scoped under `#double-story`), and `destroy()` cleans up on view-transition navigation.
 

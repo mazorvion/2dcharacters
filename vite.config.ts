@@ -51,6 +51,7 @@ function routes(): Plugin {
 
 export default defineConfig({
   plugins: [storyHtml(), devShots(), routes()],
+  define: { __DOUBLE_DEBUG__: 'true' },
   build: {
     target: 'es2022',
     cssCodeSplit: false,

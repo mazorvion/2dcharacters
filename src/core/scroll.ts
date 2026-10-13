@@ -7,10 +7,11 @@ gsap.registerPlugin(ScrollTrigger);
 
 export interface Scroll { lenis: Lenis | null; destroy(): void }
 
-export function initScroll(): Scroll {
+/** smooth = false: the host page scrolls natively or runs its own smooth scroller (ScrollTrigger follows either). */
+export function initScroll(smooth = true): Scroll {
   ScrollTrigger.config({ ignoreMobileResize: true });
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) return { lenis: null, destroy() {} };
+  if (reduce || !smooth) return { lenis: null, destroy() {} };
   const lenis = new Lenis({ lerp: 0.1 }); // touch stays native by default
   lenis.on('scroll', ScrollTrigger.update);
   const raf = (t: number) => lenis.raf(t * 1000);
