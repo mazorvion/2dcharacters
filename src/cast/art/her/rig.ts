@@ -19,7 +19,6 @@ export const HER: Rig = {
   },
   face: NO_INK,
   restFace: { eyeL: '', eyeR: '', browL: '', browR: '', mouth: '' },
-  scale: 1.075,
   ref: { image: '/reference/duo-stage.webp', beadPx: 7.23, cell0: [1266.2, -68.29] },
   regions: { face: [26, 10, 58, 46], torso: [10, 30, 72, 66], legs: [10, 56, 66, 95] },
 };
