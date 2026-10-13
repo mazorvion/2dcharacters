@@ -19,11 +19,21 @@ export interface Ctx {
   profile: Profile;
   root: HTMLElement;
   copy: HTMLElement | null;
+  /** Where the Double stands this chapter (landscape), and the matching subject offset (0 in portrait). */
+  place: 'center' | 'left' | 'right';
+  sx: number;
+  /** Chapter accent (eyebrow dot token), used to tint the spotlight. */
+  dot?: string;
+  /** Model turn (deg) before/after this chapter's crossing: one full twirl in the travel direction. */
+  rotFrom: number;
+  rotTo: number;
+  /** prefers-reduced-motion: no twirls or hops, the Double just glides. */
+  reduce: boolean;
   /** Camera shot framing these parts for the current profile. */
   shot(ids: readonly PartId[], o: ShotOpts): Cam;
-  /** Assembled, right of the copy column (the closing CTA). */
+  /** Assembled, centre stage above the copy (the landing and the closing CTA). */
   heroShot: Cam;
-  /** Fully exploded 3/4 diagram view (the opening frame). */
+  /** Fully exploded diagram view (the opening frame). */
   openShot: Cam;
 }
 

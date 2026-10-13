@@ -10,9 +10,14 @@ export interface ChapterCopy {
   /** Scroll length in svh (desktop; portrait × 0.8). The last chapter also pays the 100svh sticky tail. */
   len: number;
   eyebrow?: string;
-  /** Eyebrow square colour (brand token name). */
+  /** Eyebrow square colour (brand token name); also tints the spotlight behind the Double. */
   dot?: string;
   title?: string;
+  /**
+   * Where the Double stands in landscape. The copy (and the beat's demo card) takes the other half,
+   * so the Double crosses the screen between beats. Portrait always centres it.
+   */
+  stage: 'center' | 'left' | 'right';
 }
 
 export const CONTENT = {
@@ -25,16 +30,17 @@ export const CONTENT = {
   },
 
   // Headline only: one eyebrow + one title per chapter. The story opens exploded, scrolling assembles
-  // it, and the capability beats play on the finished Double (product feedback 2026-10-13).
+  // it, then the Double crosses the screen beat by beat (left, right, left…) while each capability
+  // plays on the other half (product feedback 2026-10-13).
   chapters: [
-    { id: 'exploded', len: 140, eyebrow: 'The Double · Exploded view', dot: 'cobalt', title: 'Every Double starts *in pieces.*' },
-    { id: 'assemble', len: 210, eyebrow: 'Assembly', dot: 'lime-edge', title: 'Piece by piece, *it comes together.*' },
-    { id: 'speaking', len: 120, eyebrow: '01 · Speaking', dot: 'bubblegum', title: 'Talks in *your voice.*' },
-    { id: 'hearing', len: 110, eyebrow: '02 · Hearing', dot: 'lime-edge', title: 'Listens *in real time.*' },
-    { id: 'thinking', len: 110, eyebrow: '03 · Thinking', dot: 'grape', title: 'Thinks *before it answers.*' },
-    { id: 'knowledge', len: 130, eyebrow: '04 · Knowledge', dot: 'amber', title: 'Learns from *what you know.*' },
-    { id: 'acting', len: 140, eyebrow: '05 · Acting', dot: 'tangerine', title: 'Then it *gets things done.*' },
-    { id: 'assembled', len: 190, eyebrow: 'Ready when you are', dot: 'lime-edge', title: 'Meet *your Double.*' },
+    { id: 'exploded', len: 170, stage: 'center', eyebrow: 'The Double · Exploded view', dot: 'cobalt', title: 'Every Double starts *in pieces.*' },
+    { id: 'assemble', len: 190, stage: 'center', eyebrow: 'Assembly', dot: 'lime-edge', title: 'Piece by piece, *it comes together.*' },
+    { id: 'speaking', len: 150, stage: 'left', eyebrow: '01 · Speaking', dot: 'bubblegum', title: 'Talks in *your voice.*' },
+    { id: 'hearing', len: 140, stage: 'right', eyebrow: '02 · Hearing', dot: 'lime-edge', title: 'Listens *in real time.*' },
+    { id: 'thinking', len: 140, stage: 'left', eyebrow: '03 · Thinking', dot: 'grape', title: 'Thinks *before it answers.*' },
+    { id: 'knowledge', len: 150, stage: 'right', eyebrow: '04 · Knowledge', dot: 'amber', title: 'Learns from *what you know.*' },
+    { id: 'acting', len: 160, stage: 'left', eyebrow: '05 · Acting', dot: 'tangerine', title: 'Then it *gets things done.*' },
+    { id: 'assembled', len: 190, stage: 'center', eyebrow: 'Ready when you are', dot: 'lime-edge', title: 'Meet *your Double.*' },
   ] as ChapterCopy[],
 
   cta: {
@@ -48,10 +54,10 @@ export const CONTENT = {
   /** Opening diagram labels (drawn by default): the five capabilities, each on the part that does it. */
   callouts: [
     { part: 'speaker', title: 'Speaking', sub: 'Speaker · your cloned voice' },
-    { part: 'patchR', title: 'Hearing', sub: 'Sensory patches · listens in real time' },
+    { part: 'patchL', title: 'Hearing', sub: 'Sensory patches · listens in real time' },
     { part: 'chassis', title: 'Thinking', sub: 'Main board · reasons before replying' },
     { part: 'memory', title: 'Knowledge', sub: 'Memory · PDFs, sites, docs' },
-    { part: 'clawR', title: 'Acting', sub: 'Pincer claws · books, updates, sends' },
+    { part: 'clawL', title: 'Acting', sub: 'Pincer claws · books, updates, sends' },
   ] as { part: PartId; title: string; sub?: string }[],
 
   /** Beat overlays (projected beside the part that just snapped on). Icons come from overlay/icons.ts. */

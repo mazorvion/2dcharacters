@@ -33,3 +33,14 @@
 @media (max-aspect-ratio: 4/5) {
   #double-story .diagram-title { display: none; }
 }
+
+/* Colour spotlight behind the Double: follows the subject across the stage, tinted per beat. */
+#double-story .spot {
+  --spot-x: 50%; --spot-y: 50%; --spot-rgb: 222 226 255; --spot-a: 0; --spot-s: 1;
+  pointer-events: none;
+  opacity: var(--spot-a);
+  background: radial-gradient(
+    circle calc(34vmin * var(--spot-s)) at var(--spot-x) var(--spot-y),
+    rgb(var(--spot-rgb) / .62) 0%, rgb(var(--spot-rgb) / .34) 45%, rgb(var(--spot-rgb) / .1) 75%, rgb(var(--spot-rgb) / 0) 100%
+  );
+}

@@ -94,7 +94,16 @@
 #double-story .ov-pop .ov-app { width: 44px; height: 44px; border-radius: var(--radius-icon); box-shadow: 0 10px 24px -10px rgba(21,23,43,.4); }
 #double-story .ov-pop .ov-app svg { width: 24px; height: 24px; }
 
+/* docked in the copy column under the headline (.demo slot) */
+#double-story .demo .ov-card {
+  width: 100%;
+  padding: 16px 18px 18px;
+  visibility: hidden;
+  box-shadow: 0 1px 0 rgba(21,23,43,.04), 0 28px 60px -28px rgba(21,23,43,.32), inset 0 0 0 1px rgba(21,23,43,.06);
+}
+
 @media (max-aspect-ratio: 4/5) {
   #double-story .ov-card { width: min(340px, calc(100vw - 32px)); }
+  #double-story .demo .ov-card { width: 100%; padding: 12px 14px 14px; font-size: 13px; }
   #double-story .ov-doc { width: 200px; }
 }

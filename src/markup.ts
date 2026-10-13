@@ -8,6 +8,15 @@ const esc = (s: string) =>
 /** `*accent*` → <em>accent</em> (brand Newsreader italic). */
 export const rich = (s: string) => esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
+/** Like rich(), but every word sits in its own mask so the timeline can raise it in. */
+const words = (s: string) =>
+  s.split(/(\s+)/).map((w) => (!w || /^\s+$/.test(w) ? w : `<span class="w"><span class="wi">${esc(w)}</span></span>`)).join('');
+export const richWords = (s: string) =>
+  s.split(/(\*[^*]+\*)/).map((seg) => (seg.startsWith('*') && seg.endsWith('*') && seg.length > 1 ? `<em>${words(seg.slice(1, -1))}</em>` : words(seg))).join('');
+
+/** Chapters with a projected capability demo (beats.ts docks its card in the .demo slot). */
+const DEMO = new Set(['speaking', 'hearing', 'thinking', 'knowledge', 'acting']);
+
 function chapter(ch: ChapterCopy, c: Content): string {
   const h = ch.id === 'exploded' ? 'h2' : 'h3';
   const cta = ch.id === 'assembled'
@@ -18,12 +27,15 @@ function chapter(ch: ChapterCopy, c: Content): string {
     : '';
   const copy = ch.title
     ? `<div class="copy">
-      ${ch.eyebrow ? `<p class="eyebrow"><i class="sq" style="background:var(--${ch.dot ?? 'cobalt'})"></i>${esc(ch.eyebrow)}</p>` : ''}
-      <${h} class="title">${rich(ch.title)}</${h}>
-      ${cta}
+      <div class="head">
+        ${ch.eyebrow ? `<p class="eyebrow"><i class="sq" style="background:var(--${ch.dot ?? 'cobalt'})"></i>${esc(ch.eyebrow)}</p>` : ''}
+        <${h} class="title">${richWords(ch.title)}</${h}>
+        ${cta}
+      </div>
+      ${DEMO.has(ch.id) ? '<div class="demo" aria-hidden="true"></div>' : ''}
     </div>`
     : '';
-  return `<article class="chapter" data-ch="${ch.id}" style="--len:${ch.len}">${copy}</article>`;
+  return `<article class="chapter" data-ch="${ch.id}" data-stage="${ch.stage}" style="--len:${ch.len}">${copy}</article>`;
 }
 
 function frame(c: Content): string {
@@ -42,6 +54,7 @@ export function storyMarkup(c: Content = CONTENT, opts: { poster?: string } = {}
   <a class="skip" href="#double-story-end">${esc(c.meta.skip)}</a>
   <div class="stage">
     <div class="paper" aria-hidden="true"></div>
+    <div class="spot" aria-hidden="true"></div>
     ${poster}
     <canvas class="gl" aria-hidden="true"></canvas>
     <svg class="lines" aria-hidden="true"></svg>

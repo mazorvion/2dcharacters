@@ -22,6 +22,9 @@ export const state = {
   clawPinch: 0,
   assembleBounce: 0,
   wave: 0,                    // claw wave (final chapter)
+  hop: 0,                     // 0..1 one hop across the stage (squash, lift, land), reset per crossing
+  /** Soft colour spotlight behind the Double: rgb, strength 0..1, size multiplier. */
+  spot: { r: 222, g: 226, b: 255, a: 0, s: 1 },
   /** Per-beat overlay visibility 0..1 and content progress 0..1 (both scrubbed, so always reversible). */
   vis: { speaking: 0, hearing: 0, thinking: 0, knowledge: 0, acting: 0 } as Record<Beat, number>,
   prog: { speaking: 0, hearing: 0, thinking: 0, knowledge: 0, acting: 0 } as Record<Beat, number>,

@@ -56,8 +56,9 @@ export function createCallouts(overlay: HTMLElement, lines: SVGSVGElement, stage
     [...labels].sort((a, b) => a.a.y - b.a.y).forEach((l, i) => (l.order = i));
     const N = labels.length;
 
-    // balanced columns: the half with the leftmost anchors goes left
-    [...labels].sort((a, b) => a.a.x - b.a.x).forEach((l, i) => (l.side = i < N / 2 ? -1 : 1));
+    // each label takes the column on its part's side of the subject, so leaders never cross it
+    const cx = W * (0.5 + state.cam.sx);
+    for (const l of labels) l.side = l.a.x < cx ? -1 : 1;
     {
       for (const side of [-1, 1] as const) {
         const col = labels.filter((l) => l.side === side).sort((a, b) => a.a.y - b.a.y);
@@ -73,7 +74,7 @@ export function createCallouts(overlay: HTMLElement, lines: SVGSVGElement, stage
       }
     }
 
-    const colL = portrait ? 14 : Math.max(24, W * 0.08), colR = W - colL;
+    const colL = portrait ? 14 : Math.max(24, W * 0.045), colR = W - colL;
     for (const l of labels) {
       const lp = range(state.callouts, (l.order / N) * 0.6, (l.order / N) * 0.6 + 0.4);
       if (lp <= 0) {

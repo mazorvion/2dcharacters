@@ -1,5 +1,5 @@
-// Capability beat overlays: one card per beat, docked beside the part that just snapped on, with a
-// blueprint leader line to it. Everything is driven by state.vis / state.prog (scrubbed, reversible);
+// Capability beat overlays: one card per beat, docked under its chapter's headline (the copy column
+// on the half of the screen the Double is not standing on), with a blueprint leader line to the part. Everything is driven by state.vis / state.prog (scrubbed, reversible);
 // only the ambient loops (waveform, sound rings, thinking dots) read the stage clock, like idle.ts.
 import * as THREE from 'three';
 import { CONTENT } from '../content';
@@ -15,6 +15,8 @@ interface BeatView {
   part: PartId;
   local: [number, number, number];
   thought?: boolean;
+  /** No leader line (the beat's own layer already ties the card to the part). */
+  noLeader?: boolean;
   /** Extra full-stage layer (rings, flying cards, pops) whose visibility follows the beat. */
   layer?: HTMLElement;
   update(p: number, time: number, a: Pt, box: { x: number; y: number; w: number; h: number }): void;
@@ -82,7 +84,7 @@ function hearing(overlay: HTMLElement): BeatView {
   const rings = [0, 1, 2].map(() => ringWrap.appendChild(el('i', 'ov-ring')));
   overlay.appendChild(ringWrap);
   return {
-    beat: 'hearing', card, part: 'patchR', local: [0.12, 0, 0], layer: ringWrap,
+    beat: 'hearing', card, part: 'patchR', local: [0.12, 0, 0], layer: ringWrap, noLeader: true,
     update(p, time, a) {
       type(range(p, 0.02, 0.55));
       rows.forEach((r, k) => setVis(r, smooth(range(p, itemAt(k, rows.length) * 0.4 + 0.6, itemAt(k, rows.length) * 0.4 + 0.66))));
@@ -148,13 +150,13 @@ function knowledge(overlay: HTMLElement, stage: Stage): BeatView {
   });
   let shownN = -1;
   return {
-    beat: 'knowledge', card, part: 'hook', local: [0.34, 0.31, -0.08], layer: fly,
-    update(p, _time, a) {
-      const W = stage.width, H = stage.height;
+    // sources drop into the lime antenna ball, the side of the head facing the card
+    beat: 'knowledge', card, part: 'tipL', local: [0, 0, 0], layer: fly,
+    update(p, _time, a, box) {
       const portrait = stage.profile === 'portrait';
-      const slots = portrait
-        ? [[0.06, 0.8], [0.5, 0.86], [0.22, 0.93]]
-        : [[0.74, 0.16], [0.8, 0.66], [0.56, 0.82]];
+      // sources stack up just outside the card, on the side facing the Double, then fly into it
+      const docW = portrait ? 200 : 236;
+      const toRight = a.x > box.x + box.w / 2;
       let absorbed = 0;
       const n = docs.length;
       docs.forEach((d, k) => {
@@ -162,10 +164,11 @@ function knowledge(overlay: HTMLElement, stage: Stage): BeatView {
         const appear = easeOut(range(p, at - 0.1, at - 0.02));
         const go = smooth(range(p, at, at + 0.12));
         if (go >= 1) absorbed++;
-        const [sx, sy] = slots[k % slots.length];
-        const x0 = sx * W, y0 = sy * H;
-        const x = lerp(x0, a.x - 20, go), y = lerp(y0 + (1 - appear) * 18, a.y - 20, go);
-        d.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${(1 - 0.75 * go).toFixed(3)})`;
+        const slot = k % 3;
+        const x0 = portrait ? box.x + slot * ((box.w - docW) / 2) : toRight ? box.x + box.w + 28 + slot * 18 : box.x - docW - 28 - slot * 18;
+        const y0 = portrait ? box.y - 70 - slot * 8 : box.y + 8 + slot * 62;
+        const x = lerp(x0, a.x - 20, go), y = lerp(y0 + (1 - appear) * 18, a.y - 20, go) - Math.sin(go * Math.PI) * 40;
+        d.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${(1 - 0.75 * go).toFixed(3)}) rotate(${((1 - appear) * (toRight ? -6 : 6)).toFixed(2)}deg)`;
         setVis(d, appear * (1 - range(go, 0.7, 1)));
       });
       if (absorbed !== shownN) { num.textContent = String(absorbed); shownN = absorbed; }
@@ -218,6 +221,32 @@ function acting(overlay: HTMLElement): BeatView {
 
 // ------------------------------------------------------------------ host
 
+type BeatUi = { v: BeatView; path: SVGPathElement; a: Pt; box: { x: number; y: number; w: number; h: number } };
+
+/** Leader: part → elbow → card edge, drawn in (dash offset) as the card appears. */
+function drawLeader(u: BeatUi, vis: number, portrait: boolean) {
+  const { x, y, w } = u.box;
+  let d: string, len: number;
+  if (portrait) {
+    const ex = Math.min(x + w - 24, Math.max(x + 24, u.a.x)), ey = y - 8;
+    d = `M${u.a.x.toFixed(1)} ${u.a.y.toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`;
+    len = Math.hypot(ex - u.a.x, ey - u.a.y);
+  } else {
+    const ex = x > u.a.x ? x - 14 : x + w + 14, ey = y + 28;
+    const mx = lerp(u.a.x, ex, 0.5);
+    d = `M${u.a.x.toFixed(1)} ${u.a.y.toFixed(1)}L${mx.toFixed(1)} ${ey.toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`;
+    len = Math.hypot(mx - u.a.x, ey - u.a.y) + Math.abs(ex - mx);
+  }
+  u.path.setAttribute('d', d);
+  if (u.v.thought) {
+    u.path.style.opacity = vis.toFixed(3);
+  } else {
+    u.path.style.strokeDasharray = len.toFixed(1);
+    u.path.style.strokeDashoffset = (len * (1 - smooth(vis))).toFixed(1);
+    u.path.style.opacity = '1';
+  }
+}
+
 export function createBeats(overlay: HTMLElement, lines: SVGSVGElement, stage: Stage) {
   const wrap = el('div', 'ov-beats');
   overlay.appendChild(wrap);
@@ -225,54 +254,48 @@ export function createBeats(overlay: HTMLElement, lines: SVGSVGElement, stage: S
   lines.appendChild(group);
   const views: BeatView[] = [speaking(), hearing(overlay), thinking(), knowledge(overlay, stage), acting(overlay)];
   const ui = views.map((v) => {
-    wrap.appendChild(v.card);
+    // each card docks under its chapter's headline (the copy column opposite the Double)
+    const slot = stage.root.querySelector<HTMLElement>(`.chapter[data-ch="${v.beat}"] .demo`);
+    (slot ?? wrap).appendChild(v.card);
     const path = svgEl('path', { class: `ov-leader${v.thought ? ' is-thought' : ''}` });
     const dot = svgEl('circle', { class: 'ov-dot', r: 3 });
     group.append(path, dot);
     return { v, path, dot, a: pt(), box: { x: 0, y: 0, w: 0, h: 0 } };
   });
-  let measuredFor = '';
 
   function update() {
-    const W = stage.width, H = stage.height;
     const portrait = stage.profile === 'portrait';
-    const key = `${W}x${H}`;
-    let any = false;
+    let origin: DOMRect | null = null;
     for (const u of ui) {
       const vis = state.vis[u.v.beat];
       setVis(u.v.card, vis);
-      u.path.style.opacity = u.dot.style.opacity = vis.toFixed(3);
+      u.dot.style.opacity = u.v.noLeader ? '0' : vis.toFixed(3);
       if (u.v.layer) setVis(u.v.layer, vis);
+      if (vis <= 0.001 || u.v.noLeader) u.path.style.opacity = '0';
       if (vis <= 0.001) continue;
-      any = true;
       const part = stage.rig.parts[u.v.part].object;
       stage.projectPoint(part.localToWorld(v3.set(...u.v.local)), u.a);
-      // measure once per size (cards keep a fixed width; height is read live because content grows)
-      if (measuredFor !== key) u.box.w = u.v.card.offsetWidth;
-      u.box.h = u.v.card.offsetHeight;
-      const { w, h } = u.box;
-      let x: number, y: number;
-      if (portrait) {
-        x = (W - w) / 2;
-        y = H - h - 18;
-      } else {
-        const right = W - w - Math.max(24, W * 0.04);
-        x = Math.min(right, Math.max(W * 0.44, u.a.x + 110));
-        y = Math.min(H - h - 28, Math.max(84, u.a.y - h * 0.4));
-      }
-      u.box.x = x; u.box.y = y;
-      const rise = (1 - smooth(vis)) * 12;
-      u.v.card.style.transform = `translate3d(${x.toFixed(1)}px,${(y + rise).toFixed(1)}px,0)`;
-      // leader: anchor → elbow → card edge
-      const ex = portrait ? u.a.x : x - 6, ey = portrait ? y - 6 : y + 26;
-      const mx = portrait ? u.a.x : lerp(u.a.x, ex, 0.55);
-      u.path.setAttribute('d', `M${u.a.x.toFixed(1)} ${u.a.y.toFixed(1)}L${mx.toFixed(1)} ${ey.toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`);
+      // the card lives in the DOM column: read where it actually is, in stage coordinates
+      origin ??= overlay.getBoundingClientRect();
+      const r = u.v.card.getBoundingClientRect();
+      const rise = (1 - smooth(vis)) * 14;
+      u.box.x = r.left - origin.left; u.box.y = r.top - origin.top - parseFloat(u.v.card.dataset.rise ?? '0');
+      u.box.w = r.width; u.box.h = r.height;
+      u.v.card.style.transform = rise > 0.01 ? `translate3d(0,${rise.toFixed(1)}px,0)` : '';
+      u.v.card.dataset.rise = rise.toFixed(1);
+      if (!u.v.noLeader) drawLeader(u, vis, portrait);
       u.dot.setAttribute('cx', u.a.x.toFixed(1));
       u.dot.setAttribute('cy', u.a.y.toFixed(1));
       u.v.update(state.prog[u.v.beat], stage.time, u.a, u.box);
     }
-    if (measuredFor !== key && any) measuredFor = key;
   }
 
-  return { update, destroy() { wrap.remove(); group.remove(); overlay.querySelectorAll('.ov-rings,.ov-fly,.ov-pops').forEach((n) => n.remove()); } };
+  return {
+    update,
+    destroy() {
+      for (const u of ui) u.v.card.remove();
+      wrap.remove(); group.remove();
+      overlay.querySelectorAll('.ov-rings,.ov-fly,.ov-pops').forEach((n) => n.remove());
+    },
+  };
 }

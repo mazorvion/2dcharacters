@@ -64,10 +64,19 @@ export class Idle {
     const br = this.enabled ? Math.sin(t * 1.6) * 0.5 + 0.5 : 0;
     model.scale.set(1 + br * 0.008, 1 + br * 0.014 * calm, 1 + br * 0.008);
 
-    // landing bounce (squash & stretch) in the final chapter
+    // landing bounce (squash & stretch) after assembly
     const bounce = s.assembleBounce;
-    const squash = Math.sin(bounce * Math.PI * 2) * 0.06 * (1 - bounce);
+    let squash = Math.sin(bounce * Math.PI * 2) * 0.06 * (1 - bounce);
     model.position.y = Math.max(0, Math.sin(bounce * Math.PI)) * 0.14;
+    // hop across the stage between beats: crouch, lift off, fly, land, settle
+    const h = s.hop;
+    if (h > 0 && h < 1) {
+      const air = Math.min(1, Math.max(0, (h - 0.12) / 0.7));
+      model.position.y += Math.sin(air * Math.PI) * 0.34;
+      squash += h < 0.12 ? -Math.sin((h / 0.12) * Math.PI) * 0.08          // crouch
+        : h < 0.82 ? Math.sin(air * Math.PI) * 0.05                          // stretch in the air
+          : -Math.sin(((h - 0.82) / 0.18) * Math.PI) * 0.09;                 // land
+    }
     model.scale.y *= 1 + squash;
     model.scale.x *= 1 - squash * 0.5;
     model.scale.z *= 1 - squash * 0.5;

@@ -41,6 +41,8 @@ export class Stage {
   private firstFrame = false;
   private settling = false;
   private lastBlueprint = -1;
+  private lastSpot = '';
+  private spotEl: HTMLElement | null;
   private pmrem: THREE.PMREMGenerator;
   private envRT: THREE.WebGLRenderTarget;
   private reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -84,6 +86,7 @@ export class Stage {
     this.idle.enabled = !this.reducedMotion;
     this.idle.pointerLook = this.tier.pointerLook && matchMedia('(pointer: fine)').matches;
 
+    this.spotEl = root.querySelector<HTMLElement>('.spot');
     const r = canvas.getBoundingClientRect();
     this.width = Math.max(1, r.width); this.height = Math.max(1, r.height);
     this.profile = profileFor(this.width, this.height);
@@ -166,6 +169,20 @@ export class Stage {
     if (s.blueprint !== this.lastBlueprint) {
       this.root.style.setProperty('--blueprint', s.blueprint.toFixed(3));
       this.lastBlueprint = s.blueprint;
+    }
+
+    // the spotlight sits on the subject's screen centre (the camera's sx/sy offset)
+    const sp = s.spot;
+    const spot = `${(50 + s.cam.sx * 100).toFixed(2)}|${(50 + s.cam.sy * 100 - 2).toFixed(2)}|${sp.r | 0} ${sp.g | 0} ${sp.b | 0}|${sp.a.toFixed(3)}|${sp.s.toFixed(3)}`;
+    if (spot !== this.lastSpot && this.spotEl) {
+      const [x, y, rgb, a, sc] = spot.split('|');
+      const st = this.spotEl.style;
+      st.setProperty('--spot-x', `${x}%`);
+      st.setProperty('--spot-y', `${y}%`);
+      st.setProperty('--spot-rgb', rgb);
+      st.setProperty('--spot-a', a);
+      st.setProperty('--spot-s', sc);
+      this.lastSpot = spot;
     }
 
     this.renderer.render(this.scene, this.cam.camera);

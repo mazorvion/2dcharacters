@@ -6,19 +6,56 @@ import { PART_IDS, type PartId } from '../../scene/registry';
 import type { Chapter, Ctx, ShotOpts } from '../types';
 import { camTo, set, to } from './_util';
 
-// The story opens on a front-on exploded view (no labels). Scrolling assembles the Double piece by
-// piece, inside-out, still seen from the front; then every capability beat plays on the finished
-// Double with its own continuous camera move: low push-in, orbit to profile, overhead crane,
-// worm's-eye rise, a dolly across the front, and a rising 360° orbit to close.
+// Cinematic cut: the story opens on a slowly turning exploded diagram whose labels draw in, then
+// assembles centre stage. From there the Double crosses the screen beat by beat, left, right, left,
+// with a twirl and a hop, always turned toward the half where that capability plays out. Every
+// beat keeps the camera moving (no static holds) and the spotlight behind the Double takes the
+// beat's colour. The finale brings it back to centre for one last orbit and the CTA.
 
-/** Fraction of a beat where its content (overlay progress) plays. */
-const CONTENT_IN = 0.3, CONTENT_OUT = 0.86;
+/** Fraction of a beat where its demo (overlay progress) plays. */
+const CONTENT_IN = 0.34, CONTENT_OUT = 0.86;
+/** Share of a beat spent crossing the stage. */
+const CROSS = 0.3;
+
+/** Spotlight colours: brand tokens (PLAN.md §1) keyed by the chapter's eyebrow dot. */
+const SPOT: Record<string, [number, number, number, number]> = {
+  cobalt: [222, 226, 255, 0.9],       // --cobalt-pale
+  'lime-edge': [212, 245, 60, 0.72],  // --lime
+  bubblegum: [255, 79, 174, 0.42],
+  grape: [106, 44, 245, 0.3],
+  amber: [255, 197, 61, 0.62],
+  tangerine: [251, 105, 6, 0.4],
+};
+export const spotFor = (dot = 'cobalt') => {
+  const [r, g, b, a] = SPOT[dot] ?? SPOT.cobalt;
+  return { r, g, b, a };
+};
+
+/** Retint (and resize) the spotlight. */
+const spotTo = (tl: GSAPTimeline, dot: string | undefined, at: number, dur: number, s = 1) =>
+  tl.to(state.spot, { ...spotFor(dot), s, duration: dur, ease: 'sine.inOut' }, at);
+
+/**
+ * Cross the stage: the Double crouches, hops and twirls once in the direction it travels, while
+ * the camera carries it to its new side (the camera move itself is added by the caller).
+ */
+function cross(tl: GSAPTimeline, at: number, dur: number, ctx: Ctx, spin = true) {
+  if (!ctx.reduce) tl.fromTo(state, { hop: 0 }, { hop: 1, duration: dur, ease: 'none', immediateRender: false }, at);
+  if (spin && ctx.rotTo !== ctx.rotFrom) {
+    tl.fromTo(state, { modelRotY: ctx.rotFrom }, { modelRotY: ctx.rotTo, duration: dur * 0.86, ease: 'power2.inOut', immediateRender: false }, at + dur * 0.08);
+  }
+  set(tl, { face: 'happy' }, at);
+  spotTo(tl, ctx.dot, at + dur * 0.2, dur * 0.8);
+}
 
 interface BeatSpec {
   beat: Beat;
   /** Parts the camera frames (at their attached positions). */
   frame: PartId[];
-  /** Arrival shot, then the slow drift it settles into while the beat plays. */
+  /**
+   * Arrival shot, then the slow drift it settles into while the beat plays. Written for the Double
+   * standing on the LEFT and facing right (negative yaw); mirrored when it stands on the right.
+   */
   from: ShotOpts;
   drift: Partial<ShotOpts>;
   faces: [number, Expression][];
@@ -26,92 +63,100 @@ interface BeatSpec {
 
 function beat(spec: BeatSpec): (tl: GSAPTimeline, at: number, dur: number, ctx: Ctx) => void {
   return (tl, at, dur, ctx) => {
-    const base: ShotOpts = { explode: 0, sx: 0.06, syPortrait: 0.02, rScalePortrait: 1.35, ...spec.from };
-    // arrive on the opening angle, then keep moving through the whole beat (no static holds)
-    camTo(tl, ctx.shot(spec.frame, base), at, dur * 0.26, 'power1.inOut');
-    camTo(tl, ctx.shot(spec.frame, { ...base, ...spec.drift }), at + dur * 0.26, dur * 0.74, 'sine.inOut');
+    const m = ctx.place === 'right' ? -1 : 1;
+    const base: ShotOpts = { explode: 0, sy: 0.01, syPortrait: -0.03, rScalePortrait: 1.4, ...spec.from, sx: ctx.sx, yaw: spec.from.yaw * m };
+    const drift: ShotOpts = { ...base, ...spec.drift, yaw: (spec.drift.yaw ?? spec.from.yaw) * m };
+    const c0 = at - dur * 0.02;
+    cross(tl, c0, dur * CROSS, ctx);
+    // glide across and turn toward the copy, then keep drifting through the whole beat
+    camTo(tl, ctx.shot(spec.frame, base), c0, dur * CROSS, 'power3.inOut');
+    camTo(tl, ctx.shot(spec.frame, drift), c0 + dur * CROSS, dur * (1 - CROSS) + dur * 0.02, 'sine.inOut');
     for (const [k, face] of spec.faces) set(tl, { face }, at + dur * k);
-    tl.to(state.vis, { [spec.beat]: 1, duration: dur * 0.08, ease: 'power1.out' }, at + dur * (CONTENT_IN - 0.04));
+    tl.to(state.vis, { [spec.beat]: 1, duration: dur * 0.08, ease: 'power2.out' }, at + dur * (CONTENT_IN - 0.06));
     tl.to(state.prog, { [spec.beat]: 1, duration: dur * (CONTENT_OUT - CONTENT_IN - 0.04) }, at + dur * CONTENT_IN);
-    tl.to(state.vis, { [spec.beat]: 0, duration: dur * 0.08, ease: 'power1.in' }, at + dur * CONTENT_OUT);
+    tl.to(state.vis, { [spec.beat]: 0, duration: dur * 0.07, ease: 'power1.in' }, at + dur * CONTENT_OUT);
   };
 }
 
-// 0 · Exploded (the default view): every part floats in place around the body, seen straight on.
-// A barely-there push-in keeps it alive while the headline reads.
+// 0 · Exploded: every part floats around the body. The camera turns slowly around the diagram
+// (parallax sells the depth) while the five capability labels draw in, one per part.
 const exploded: Chapter = {
   id: 'exploded',
   build(tl, at, dur, ctx) {
-    camTo(tl, { ...ctx.openShot, radius: ctx.openShot.radius * 0.95 }, at, dur, 'sine.inOut');
+    const o = ctx.openShot;
+    camTo(tl, { ...o, yaw: 16, pitch: 5, radius: o.radius * 0.94 }, at, dur, 'sine.inOut');
+    to(tl, { callouts: 1 }, at + dur * 0.22, dur * 0.5, 'power1.inOut');
+    set(tl, { face: 'idle' }, at);
   },
 };
 
-// 1 · Assemble: parts fly home inside-out (board, memory, wires, speaker, screen, patches, antennas,
-// arms, claws, feet, screws). The camera holds the front view while it comes together, pushes in,
-// then lifts into a 3/4 hero angle as the body lands on its feet.
+// 1 · Assemble: the labels retract, parts fly home inside-out while the camera swings round to the
+// front and pushes in; the body lands with a bounce, centre stage.
 const assemble: Chapter = {
   id: 'assemble',
   build(tl, at, dur, ctx) {
     const h = ctx.heroShot;
-    const front = ctx.shot(PART_IDS, { yaw: 0, pitch: 2, explode: 0.35, rScale: 0.95, sx: 0.12, sy: -0.02, rScalePortrait: 1.15 });
-    set(tl, { face: 'surprised' }, at + dur * 0.02);
-    to(tl, { assemble: 1 }, at + dur * 0.02, dur * 0.8, 'power1.inOut');
-    camTo(tl, front, at, dur * 0.55, 'sine.inOut');
-    camTo(tl, { ...h, yaw: 24, pitch: 7 }, at + dur * 0.55, dur * 0.42, 'power2.inOut');
+    const mid = ctx.shot(PART_IDS, { yaw: 6, pitch: 3, explode: 0.45, rScale: 0.86, sx: 0, sy: -0.07, rScalePortrait: 1.2, syPortrait: -0.02 });
+    to(tl, { calloutsOut: 1 }, at, dur * 0.1, 'power1.in');
+    set(tl, { face: 'surprised' }, at + dur * 0.04);
+    to(tl, { assemble: 1 }, at + dur * 0.06, dur * 0.72, 'power1.inOut');
+    camTo(tl, mid, at, dur * 0.5, 'sine.inOut');
+    camTo(tl, { ...h, yaw: -14, pitch: 6 }, at + dur * 0.5, dur * 0.48, 'power2.inOut');
     set(tl, { face: 'idle' }, at + dur * 0.5);
-    to(tl, { assembleBounce: 1 }, at + dur * 0.8, dur * 0.14);
-    set(tl, { face: 'happy' }, at + dur * 0.86);
+    tl.fromTo(state, { assembleBounce: 0 }, { assembleBounce: 1, duration: dur * 0.16, ease: 'none', immediateRender: false }, at + dur * 0.78);
+    set(tl, { face: 'happy' }, at + dur * 0.84);
+    spotTo(tl, 'lime-edge', at + dur * 0.7, dur * 0.25, 1.05);
   },
 };
 
-// 1 · Speaking: the face screen flies into the cavity; camera arrives from the left, pushes in.
+// 2 · Speaking: hops to the left, low push-in on the screen while the voice plays on the right.
 const speaking: Chapter = {
   id: 'speaking',
   build: beat({
     beat: 'speaking', frame: ['body', 'screen'],
-    from: { yaw: -38, pitch: -14, rScale: 1.25 }, drift: { yaw: -10, pitch: 3, rScale: 1.02 },
-    faces: [[0.28, 'talking'], [0.86, 'happy']],
+    from: { yaw: -34, pitch: -8, rScale: 1.12 }, drift: { yaw: -16, pitch: 2, rScale: 0.98 },
+    faces: [[0.32, 'talking'], [0.88, 'happy']],
   }),
 };
 
-// 2 · Hearing: the sensory patches snap on; camera swings round to the side view.
+// 3 · Hearing: crosses to the right and turns its sensory patch toward the transcript on the left.
 const hearing: Chapter = {
   id: 'hearing',
   build: beat({
     beat: 'hearing', frame: ['body', 'patchR'],
-    from: { yaw: 58, pitch: 12, rScale: 1.32 }, drift: { yaw: 100, pitch: 2, rScale: 1.15 },
-    faces: [[0.2, 'listening'], [0.86, 'happy']],
+    from: { yaw: -46, pitch: 10, rScale: 1.18 }, drift: { yaw: -70, pitch: 3, rScale: 1.06 },
+    faces: [[0.3, 'listening'], [0.88, 'happy']],
   }),
 };
 
-// 3 · Thinking: stem then lime tip drop in; camera rises to a high angle looking down.
+// 4 · Thinking: back to the left; the camera cranes up and looks down on it while it reasons.
 const thinking: Chapter = {
   id: 'thinking',
   build: beat({
     beat: 'thinking', frame: ['body', 'stemL', 'tipL', 'hook'],
-    from: { yaw: -22, pitch: 60, rScale: 1.3 }, drift: { yaw: 12, pitch: 30, rScale: 1.18 },
-    faces: [[0.24, 'thinking'], [0.88, 'happy']],
+    from: { yaw: -22, pitch: 42, rScale: 1.2 }, drift: { yaw: -8, pitch: 22, rScale: 1.06 },
+    faces: [[0.3, 'thinking'], [0.9, 'happy']],
   }),
 };
 
-// 4 · Knowledge: the hooked antenna lands; low angle from the right, sources stream in.
+// 5 · Knowledge: to the right, low angle; sources fly out of the card on the left into its antenna.
 const knowledge: Chapter = {
   id: 'knowledge',
   build: beat({
     beat: 'knowledge', frame: ['body', 'hook'],
-    from: { yaw: 42, pitch: -30, rScale: 1.35 }, drift: { yaw: 18, pitch: -8, rScale: 1.25 },
-    faces: [[0.24, 'working'], [0.88, 'happy']],
+    from: { yaw: -36, pitch: -20, rScale: 1.2 }, drift: { yaw: -16, pitch: -6, rScale: 1.08 },
+    faces: [[0.3, 'working'], [0.9, 'happy']],
   }),
 };
 
-// 5 · Acting: arm roots and pincers lock on; camera pans right → left; a pinch for every action.
+// 6 · Acting: last crossing to the left; a pinch of the claws for every action that lands on the right.
 const acting: Chapter = {
   id: 'acting',
   build(tl, at, dur, ctx) {
     beat({
       beat: 'acting', frame: ['body', 'clawL', 'clawR'],
-      from: { yaw: 58, pitch: 4, rScale: 1.2 }, drift: { yaw: -48, pitch: 12, rScale: 1.12 },
-      faces: [[0.24, 'working'], [0.9, 'happy']],
+      from: { yaw: -46, pitch: 6, rScale: 1.14 }, drift: { yaw: -20, pitch: 10, rScale: 1.04 },
+      faces: [[0.3, 'working'], [0.9, 'happy']],
     })(tl, at, dur, ctx);
     const n = CONTENT.acting.actions.length;
     const span = dur * (CONTENT_OUT - CONTENT_IN - 0.04);
@@ -123,18 +168,19 @@ const acting: Chapter = {
   },
 };
 
-// 7 · Assembled: one rising 360° orbit, from a low worm's-eye angle up to eye level, a wave, the
-// blueprint fades and the CTA lands.
+// 7 · Assembled: one hop back to centre stage, a rising 360° orbit, a wave; the blueprint fades
+// and the CTA lands underneath.
 const assembled: Chapter = {
   id: 'assembled',
   build(tl, at, dur, ctx) {
     const h = ctx.heroShot;
-    camTo(tl, { ...h, yaw: 120, pitch: -16, radius: h.radius * 1.08 }, at, dur * 0.22, 'power1.in');
-    camTo(tl, { ...h, yaw: 360, pitch: 4 }, at + dur * 0.22, dur * 0.36, 'power2.out');
+    cross(tl, at - dur * 0.02, dur * 0.3, ctx, false);
+    camTo(tl, { ...h, yaw: 110, pitch: -12, radius: h.radius * 1.06 }, at - dur * 0.02, dur * 0.3, 'power2.in');
+    camTo(tl, { ...h, yaw: 360, pitch: 4 }, at + dur * 0.28, dur * 0.42, 'power2.out');
     to(tl, { blueprint: 0 }, at + dur * 0.1, dur * 0.3, 'power1.inOut');
-    set(tl, { face: 'love' }, at + dur * 0.1);
-    set(tl, { face: 'happy' }, at + dur * 0.45);
-    to(tl, { wave: 1 }, at + dur * 0.55, dur * 0.25);
+    set(tl, { face: 'love' }, at + dur * 0.3);
+    set(tl, { face: 'happy' }, at + dur * 0.6);
+    to(tl, { wave: 1 }, at + dur * 0.62, dur * 0.3);
   },
 };
 

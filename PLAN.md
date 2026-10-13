@@ -9,6 +9,9 @@ The plan is written so that a cheaper model can carry it out phase by phase with
 > - **Type, as on thedouble.ai:** Funnel Display 700 at −0.035em; accent phrase in *Newsreader Variable italic* 400 in `--cobalt` (written `*like this*` in `content.ts`); mono uppercase eyebrows in `--muted` with a 9px coloured square.
 > - **Engineering deviations, all deliberate:** NeutralToneMapping instead of ACES (ACES turned cobalt purple); camera `sy` (vertical subject offset) replaces `safeBottom`; face (screen, icon, focus) values are time-resolved keyframes, not `tl.set`; each `.chapter` has a tail with a matching negative margin so its sticky copy stays docked for the whole beat.
 
+> **Scope update (2026-10-13, cinematic cut). Overrides the layout in §2/§4.1 where they conflict.**
+> The Double no longer sits in a fixed column. It opens centre stage (exploded diagram turning slowly while the five capability callouts draw in, then assembly), then **crosses the screen beat by beat** (speaking left, hearing right, thinking left, knowledge right, acting left) with a twirl and a hop, turned toward the other half, where that beat's headline and demo card play. The finale returns it to centre for the CTA. Each chapter's side is `stage` in `content.ts`; the copy is a full-height sticky column (`--tail: 100svh`) and the beat cards dock in its `.demo` slot. A soft spotlight in the beat's accent colour follows the Double. Under reduced motion the Double glides without twirls or hops.
+
 Reference images are in `reference/`:
 - `reference/double-assembled.png`: the hero pose (the target for the assembled look).
 - `reference/exploded-view-diagram.webp`: the exploded layout and blueprint styling (the target for chapter 1).

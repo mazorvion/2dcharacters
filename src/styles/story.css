@@ -38,28 +38,36 @@
   pointer-events: none;
   z-index: 2;
 }
-/* each article has a tail overlapping the next one (negative margin), so its sticky copy stays
-   docked for the whole beat; total scroll length is unchanged */
+/* each article has a 100svh tail overlapping the next one (negative margin), so its full-height
+   sticky copy stays docked for the whole beat; total scroll length is unchanged */
 #double-story .chapter {
-  --tail: 40svh;
+  --tail: 100svh;
   position: relative;
-  height: calc(var(--len) * 1vh * var(--len-scale) + 40vh);
+  height: calc(var(--len) * 1vh * var(--len-scale) + 100vh);
   height: calc(var(--len) * 1svh * var(--len-scale) + var(--tail));
   margin-bottom: calc(-1 * var(--tail));
 }
-#double-story .chapter:last-child { --tail: 0svh; }
+#double-story .chapter:last-child { --tail: 0svh; height: calc(var(--len) * 1svh * var(--len-scale)); }
 
-/* ---------- copy ---------- */
+/* ---------- copy: a full-height sticky column on the half the Double is not standing on ---------- */
 #double-story .copy {
   position: sticky;
-  top: 30svh;
-  width: min(470px, 36vw);
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(22px, 3.4svh, 36px);
+  width: min(480px, 38vw);
   margin-left: var(--gutter);
-  pointer-events: auto;
+  pointer-events: none;
 }
+#double-story .copy > * { pointer-events: auto; }
+#double-story .chapter[data-stage="left"] .copy { margin-left: auto; margin-right: var(--gutter); }
 #double-story .eyebrow {
   display: flex; align-items: center; gap: 10px; width: fit-content;
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font: 400 12px/1.4 var(--font-mono);
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -70,8 +78,8 @@
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(34px, 3.9vw, 60px);
-  line-height: 1.04;
+  font-size: clamp(36px, 4.2vw, 64px);
+  line-height: 1.02;
   letter-spacing: -0.035em;
   color: var(--ink);
   text-wrap: balance;
@@ -84,12 +92,35 @@
   letter-spacing: -0.03em;
   color: var(--cobalt);
 }
+/* word masks: each word rises out of its own clip (padding keeps ascenders + italic overhang) */
+#double-story .title .w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: .1em .1em .16em .02em;
+  margin: -.1em -.1em -.16em -.02em;
+}
+#double-story .title .wi { display: inline-block; will-change: transform; }
 #double-story .body {
   margin: 20px 0 0;
   font-size: var(--fs-lede);
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
+}
+
+/* demo slot: beats.ts docks the capability card here, under the headline */
+#double-story .demo { position: relative; width: 100%; max-width: 400px; }
+
+/* the Double stands centre stage (opening, assembly, finale): copy sits centred underneath */
+@media (min-aspect-ratio: 801/1000) {
+  #double-story .chapter[data-stage="center"] .copy {
+    width: min(820px, 90vw); margin-inline: auto; text-align: center;
+    justify-content: flex-end; padding-bottom: clamp(36px, 7svh, 84px);
+  }
+  #double-story .chapter[data-stage="center"] .eyebrow { margin-inline: auto; margin-bottom: 14px; }
+  #double-story .chapter[data-stage="center"] .title { font-size: clamp(30px, 3.3vw, 50px); }
+  #double-story .chapter[data-stage="center"] .cta { justify-content: center; }
 }
 
 /* ---------- CTA (last chapter) ---------- */
@@ -103,7 +134,6 @@
 #double-story .btn:focus-visible { outline: 3px solid var(--lavender); outline-offset: 3px; }
 #double-story .btn-primary { background: var(--ink); color: #fff; }
 #double-story .btn-ghost { background: var(--neutral-100); color: var(--ink); }
-@media (max-aspect-ratio: 4/5) { #double-story .cta { justify-content: center; } }
 
 /* ---------- skip link: only visible on keyboard focus ---------- */
 #double-story .skip {
@@ -115,26 +145,21 @@
 }
 #double-story .skip:focus-visible { transform: none; outline: 3px solid var(--lavender); outline-offset: 2px; }
 
-/* the opening (exploded) headline sits centred under the front-on exploded view */
-@media (min-aspect-ratio: 801/1000) {
-  #double-story .chapter[data-ch="exploded"] .copy {
-    top: calc(100svh - 168px); width: min(760px, 90vw); margin-inline: auto; text-align: center;
-  }
-  #double-story .chapter[data-ch="exploded"] .eyebrow { margin-inline: auto; }
-  #double-story .chapter[data-ch="exploded"] .title { font-size: clamp(30px, 3.2vw, 48px); }
-}
-
-/* ---------- portrait: all copy sits centred at the top, the Double below ---------- */
+/* ---------- portrait: headline at the top, the Double centred, the demo card docked at the bottom ---------- */
 @media (max-aspect-ratio: 4/5) {
   #double-story { --len-scale: .8; }
-  #double-story .chapter { --tail: 60svh; }
-  #double-story .copy {
-    top: clamp(48px, 8svh, 80px);
+  #double-story .copy,
+  #double-story .chapter[data-stage="left"] .copy {
     width: calc(100% - 32px);
     margin-inline: auto;
+    padding: clamp(44px, 7svh, 72px) 0 16px;
+    justify-content: space-between;
     text-align: center;
   }
-  #double-story .eyebrow { margin-inline: auto; }
+  #double-story .eyebrow { margin-inline: auto; margin-bottom: 12px; }
+  #double-story .title { font-size: clamp(30px, 8.4vw, 40px); }
+  #double-story .cta { justify-content: center; }
+  #double-story .demo { margin-inline: auto; text-align: left; }
   #double-story .body { margin-top: 12px; }
 }
 
@@ -143,9 +168,10 @@
 #double-story[data-mode="static"] .chapters { margin-top: 0; padding: clamp(72px, 9vw, 128px) 0; }
 #double-story[data-mode="static"] .chapter { height: auto; margin-bottom: 0; }
 #double-story[data-mode="static"] .chapter:empty { display: none; }
-#double-story[data-mode="static"] .copy {
-  position: static; width: min(760px, calc(100% - 32px)); margin: 0 auto 48px; text-align: center;
+#double-story[data-mode="static"] .chapter[data-stage] .copy {
+  position: static; height: auto; display: block; width: min(760px, calc(100% - 32px)); margin: 0 auto 48px; padding: 0; text-align: center;
 }
+#double-story[data-mode="static"] .demo { display: none; }
 #double-story[data-mode="static"] .eyebrow { margin-inline: auto; }
 
 /* ---------- demo page stand-ins for the neighbouring homepage sections ---------- */
