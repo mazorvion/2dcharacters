@@ -48,10 +48,10 @@ export class Idle {
     const { model, parts } = this.rig;
     const calm = assembled(s); // whole-body idle grows as the Double comes together
 
-    // loose parts float gently while they wait to be attached
+    // loose parts float gently while they wait to be attached, and hover a little while popped out
     if (this.enabled) {
       this.ids.forEach((id, i) => {
-        const e = Math.max(0, this.exploder.amount(id));
+        const e = Math.max(0, this.exploder.amount(id), this.exploder.popAmount(id) * 0.6);
         if (e <= 0.001) return;
         const o = parts[id].object;
         o.position.y += Math.sin(t * 1.1 + i * 1.7) * 0.035 * e;
@@ -126,7 +126,7 @@ export class Idle {
     const feetLift = Math.max(0, model.position.y);
     const sh = THREE.MathUtils.clamp(1 - feetLift * 2.5, 0.3, 1);
     this.rig.shadow.scale.setScalar(0.75 + sh * 0.25);
-    (this.rig.shadow.material as THREE.MeshBasicMaterial).opacity = sh * (0.25 + 0.75 * (1 - Math.min(1, Math.max(0, this.exploder.amount('footL'))))) * Math.max(0, 1 - s.dim);
+    (this.rig.shadow.material as THREE.MeshBasicMaterial).opacity = sh * (0.25 + 0.75 * (1 - Math.min(1, Math.max(0, this.exploder.amount('footL'))))) * (1 - 0.4 * s.dim);
   }
 
   dispose() { removeEventListener('pointermove', this.onMove); }

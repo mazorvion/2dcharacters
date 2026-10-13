@@ -10,8 +10,10 @@ export type Beat = (typeof BEATS)[number];
 export const state = {
   assemble: 0,                // 0 fully exploded (the opening frame) → 1 assembled, staggered inside-out
   explodeScale: 1,            // per-profile spread multiplier
-  focus: '',                  // comma-separated PartIds in focus ('' = all); others dimmed
-  dim: 0,                     // 0..1 how much non-focus parts fade
+  focus: '',                  // comma-separated PartIds in focus ('' = all); others ghost toward the paper
+  dim: 0,                     // 0..1 how far non-focus parts ghost
+  popParts: '',               // comma-separated PartIds that slide out of the body for their beat
+  pop: 0,                     // 0..1 how far they are out (eased with a small overshoot in explode.ts)
   // sx/sy: subject centre offset as a fraction of the viewport (+x right, +y down)
   cam: { yaw: 0, pitch: 4, radius: 1.6, tx: 0, ty: 0, tz: 0, sx: 0, sy: 0 },
   modelRotY: 0,
@@ -23,8 +25,6 @@ export const state = {
   assembleBounce: 0,
   wave: 0,                    // claw wave (final chapter)
   hop: 0,                     // 0..1 one hop across the stage (squash, lift, land), reset per crossing
-  /** Soft colour spotlight behind the Double: rgb, strength 0..1, size multiplier. */
-  spot: { r: 222, g: 226, b: 255, a: 0, s: 1 },
   /** Per-beat overlay visibility 0..1 and content progress 0..1 (both scrubbed, so always reversible). */
   vis: { speaking: 0, hearing: 0, thinking: 0, knowledge: 0, acting: 0 } as Record<Beat, number>,
   prog: { speaking: 0, hearing: 0, thinking: 0, knowledge: 0, acting: 0 } as Record<Beat, number>,

@@ -10,7 +10,7 @@ export interface ChapterCopy {
   /** Scroll length in svh (desktop; portrait × 0.8). The last chapter also pays the 100svh sticky tail. */
   len: number;
   eyebrow?: string;
-  /** Eyebrow square colour (brand token name); also tints the spotlight behind the Double. */
+  /** Eyebrow square colour (brand token name). */
   dot?: string;
   title?: string;
   /**

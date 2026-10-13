@@ -7,7 +7,7 @@ import { state, type Profile } from '../core/state';
 import { PART_IDS, type PartId } from '../scene/registry';
 import type { Stage } from '../scene/Stage';
 import type { Chapter, Ctx, Cam, ShotOpts } from './types';
-import { CHAPTERS, spotFor } from './chapters';
+import { CHAPTERS } from './chapters';
 import { resolveDiscrete, type Discrete } from './chapters/_util';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -18,7 +18,7 @@ const lenScale = (p: Profile) => (p === 'portrait' ? 0.8 : 1);
 const SIDE_SX = 0.2;
 
 /** Continuous values every chapter may touch, reset at t = 0 so scrubbing to the top is always clean. */
-const RESET = { assemble: 0, dim: 0, blueprint: 1, callouts: 0, calloutsOut: 0, clawPinch: 0, assembleBounce: 0, wave: 0, modelRotY: 0, hop: 0 };
+const RESET = { assemble: 0, dim: 0, pop: 0, blueprint: 1, callouts: 0, calloutsOut: 0, clawPinch: 0, assembleBounce: 0, wave: 0, modelRotY: 0, hop: 0 };
 const ZERO5 = { speaking: 0, hearing: 0, thinking: 0, knowledge: 0, acting: 0 };
 
 export function buildTimeline(root: HTMLElement, stage: Stage): () => void {
@@ -36,7 +36,7 @@ export function buildTimeline(root: HTMLElement, stage: Stage): () => void {
     const portrait = profile === 'portrait';
 
     const shot = (ids: readonly PartId[], o: ShotOpts): Cam => {
-      const f = stage.cam.frameParts([...ids], profile, stage.exploder, o.explode ?? 1);
+      const f = stage.cam.frameParts([...ids], profile, stage.exploder, o.explode ?? 1, 1.04, o.popped);
       return {
         yaw: o.yaw, pitch: o.pitch,
         radius: Math.max(o.minR ?? 0.4, f.radius * (portrait ? o.rScalePortrait ?? o.rScale ?? 1 : o.rScale ?? 1)),
@@ -55,13 +55,12 @@ export function buildTimeline(root: HTMLElement, stage: Stage): () => void {
     Object.assign(state.cam, openShot);
     Object.assign(state.vis, ZERO5);
     Object.assign(state.prog, ZERO5);
-    Object.assign(state.spot, spotFor(CONTENT.chapters[0].dot), { s: 1 });
     state.dirty = true;
 
     const chapters = CONTENT.chapters;
     const total = chapters.reduce((a, ch) => a + ch.len, 0) * scale - 100;
     // declared before the timeline: ScrollTrigger may render (and call onUpdate) immediately
-    const discrete: Discrete[] = [{ at: 0, vars: { face: 'idle', faceIcon: null, focus: '' } }];
+    const discrete: Discrete[] = [{ at: 0, vars: { face: 'idle', faceIcon: null, focus: '', popParts: '' } }];
     const starts: [typeof chapters[number]['id'], number][] = [];
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
@@ -72,6 +71,7 @@ export function buildTimeline(root: HTMLElement, stage: Stage): () => void {
         if (d.face !== undefined && d.face !== state.face) state.face = d.face;
         if (d.faceIcon !== undefined) state.faceIcon = d.faceIcon;
         if (d.focus !== undefined) state.focus = d.focus;
+        if (d.popParts !== undefined) state.popParts = d.popParts;
         // current chapter for CSS hooks (derived from time, so it is always reversible)
         const t = tl.time();
         let id = chapters[0].id;
@@ -86,12 +86,11 @@ export function buildTimeline(root: HTMLElement, stage: Stage): () => void {
       },
     });
 
-    // never replace state.cam / vis / prog / spot (tweens hold references to them): set their fields instead
+    // never replace state.cam / vis / prog (tweens hold references to them): set their fields instead
     tl.set(state, RESET, 0);
     tl.set(state.cam, { ...openShot }, 0);
     tl.set(state.vis, ZERO5, 0);
     tl.set(state.prog, ZERO5, 0);
-    tl.set(state.spot, { ...spotFor(chapters[0].dot), s: 1 }, 0);
 
     let t = 0;
     let rot = 0;
@@ -108,7 +107,7 @@ export function buildTimeline(root: HTMLElement, stage: Stage): () => void {
       const rotFrom = rot;
       if (ch.stage !== 'center' && travel !== 0 && !c.reduce) rot += travel * 360;
       prevSx = sideSx;
-      const ctx: Ctx = { stage, profile, root, copy, shot, heroShot, openShot, place: ch.stage, sx, dot: ch.dot, rotFrom, rotTo: rot, reduce: !!c.reduce };
+      const ctx: Ctx = { stage, profile, root, copy, shot, heroShot, openShot, place: ch.stage, sx, rotFrom, rotTo: rot, reduce: !!c.reduce };
       (CHAPTERS[ch.id] as Chapter).build(tl, t, dur, ctx);
       if (copy) copyMotion(tl, copy, ch.stage, i, chapters.length, t, dur, portrait);
       t += dur;

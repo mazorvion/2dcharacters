@@ -54,7 +54,6 @@ export function storyMarkup(c: Content = CONTENT, opts: { poster?: string } = {}
   <a class="skip" href="#double-story-end">${esc(c.meta.skip)}</a>
   <div class="stage">
     <div class="paper" aria-hidden="true"></div>
-    <div class="spot" aria-hidden="true"></div>
     ${poster}
     <canvas class="gl" aria-hidden="true"></canvas>
     <svg class="lines" aria-hidden="true"></svg>

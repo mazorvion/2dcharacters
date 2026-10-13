@@ -39,14 +39,18 @@ export class CameraRig {
     }
   }
 
-  /** Bounding sphere (target + radius) of some parts at their exploded positions for a profile. */
-  frameParts(ids: PartId[], profile: Profile, exploder: Exploder, explode = 1, pad = 1.04): Pick<Shot, 'tx' | 'ty' | 'tz' | 'radius'> {
+  /**
+   * Bounding sphere (target + radius) of some parts at their exploded positions for a profile.
+   * Parts listed in `popped` are measured where they sit when popped out for their beat.
+   */
+  frameParts(ids: PartId[], profile: Profile, exploder: Exploder, explode = 1, pad = 1.04, popped: readonly PartId[] = []): Pick<Shot, 'tx' | 'ty' | 'tz' | 'radius'> {
     const box = new THREE.Box3();
     const pts: { c: THREE.Vector3; r: number }[] = [];
     for (const id of ids) {
       const sp = this.spheres.get(id);
       if (!sp) continue;
       const pos = exploder.restPosition(id).lerp(exploder.explodedPosition(id, profile), explode).add(sp.c);
+      if (popped.includes(id)) pos.add(exploder.popOffset(id, profile));
       pts.push({ c: pos, r: sp.r });
       box.expandByPoint(pos.clone().addScalar(sp.r)).expandByPoint(pos.clone().addScalar(-sp.r));
     }

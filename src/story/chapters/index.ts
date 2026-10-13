@@ -8,32 +8,15 @@ import { camTo, set, to } from './_util';
 
 // Cinematic cut: the story opens on a slowly turning exploded diagram whose labels draw in, then
 // assembles centre stage. From there the Double crosses the screen beat by beat, left, right, left,
-// with a twirl and a hop, always turned toward the half where that capability plays out. Every
-// beat keeps the camera moving (no static holds) and the spotlight behind the Double takes the
-// beat's colour. The finale brings it back to centre for one last orbit and the CTA.
+// with a twirl and a hop, always turned toward the half where that capability plays out. On arrival
+// the beat's part slides partway out of the body (the same part its label named in the exploded
+// view) while the rest of the Double ghosts back toward the paper, so each beat is about one part.
+// The camera keeps moving throughout. The finale brings it back to centre for one last orbit and the CTA.
 
 /** Fraction of a beat where its demo (overlay progress) plays. */
 const CONTENT_IN = 0.34, CONTENT_OUT = 0.86;
 /** Share of a beat spent crossing the stage. */
 const CROSS = 0.3;
-
-/** Spotlight colours: brand tokens (PLAN.md §1) keyed by the chapter's eyebrow dot. */
-const SPOT: Record<string, [number, number, number, number]> = {
-  cobalt: [222, 226, 255, 0.9],       // --cobalt-pale
-  'lime-edge': [212, 245, 60, 0.72],  // --lime
-  bubblegum: [255, 79, 174, 0.42],
-  grape: [106, 44, 245, 0.3],
-  amber: [255, 197, 61, 0.62],
-  tangerine: [251, 105, 6, 0.4],
-};
-export const spotFor = (dot = 'cobalt') => {
-  const [r, g, b, a] = SPOT[dot] ?? SPOT.cobalt;
-  return { r, g, b, a };
-};
-
-/** Retint (and resize) the spotlight. */
-const spotTo = (tl: GSAPTimeline, dot: string | undefined, at: number, dur: number, s = 1) =>
-  tl.to(state.spot, { ...spotFor(dot), s, duration: dur, ease: 'sine.inOut' }, at);
 
 /**
  * Cross the stage: the Double crouches, hops and twirls once in the direction it travels, while
@@ -45,13 +28,16 @@ function cross(tl: GSAPTimeline, at: number, dur: number, ctx: Ctx, spin = true)
     tl.fromTo(state, { modelRotY: ctx.rotFrom }, { modelRotY: ctx.rotTo, duration: dur * 0.86, ease: 'power2.inOut', immediateRender: false }, at + dur * 0.08);
   }
   set(tl, { face: 'happy' }, at);
-  spotTo(tl, ctx.dot, at + dur * 0.2, dur * 0.8);
 }
 
 interface BeatSpec {
   beat: Beat;
-  /** Parts the camera frames (at their attached positions). */
+  /** Parts the camera frames (at their attached positions, or popped ones where they pop to). */
   frame: PartId[];
+  /** The beat's subject: slides out of the body (explode.ts POP) and stays in full colour. */
+  pop: PartId[];
+  /** Also kept in full colour, without popping (the face, so expressions stay readable). */
+  keep?: PartId[];
   /**
    * Arrival shot, then the slow drift it settles into while the beat plays. Written for the Double
    * standing on the LEFT and facing right (negative yaw); mirrored when it stands on the right.
@@ -64,7 +50,7 @@ interface BeatSpec {
 function beat(spec: BeatSpec): (tl: GSAPTimeline, at: number, dur: number, ctx: Ctx) => void {
   return (tl, at, dur, ctx) => {
     const m = ctx.place === 'right' ? -1 : 1;
-    const base: ShotOpts = { explode: 0, sy: 0.01, syPortrait: -0.03, rScalePortrait: 1.4, ...spec.from, sx: ctx.sx, yaw: spec.from.yaw * m };
+    const base: ShotOpts = { explode: 0, sy: 0.01, syPortrait: -0.03, rScalePortrait: 1.4, ...spec.from, sx: ctx.sx, yaw: spec.from.yaw * m, popped: spec.pop };
     const drift: ShotOpts = { ...base, ...spec.drift, yaw: (spec.drift.yaw ?? spec.from.yaw) * m };
     const c0 = at - dur * 0.02;
     cross(tl, c0, dur * CROSS, ctx);
@@ -72,6 +58,14 @@ function beat(spec: BeatSpec): (tl: GSAPTimeline, at: number, dur: number, ctx: 
     camTo(tl, ctx.shot(spec.frame, base), c0, dur * CROSS, 'power3.inOut');
     camTo(tl, ctx.shot(spec.frame, drift), c0 + dur * CROSS, dur * (1 - CROSS) + dur * 0.02, 'sine.inOut');
     for (const [k, face] of spec.faces) set(tl, { face }, at + dur * k);
+    // focus: once it has landed, the subject springs out and the rest ghosts back; both undo before
+    // the next crossing (focus lists change only while pop is 0, so nothing jumps)
+    set(tl, { focus: [...spec.pop, ...(spec.keep ?? [])].join(','), popParts: spec.pop.join(',') }, at + dur * 0.24);
+    tl.to(state, { dim: 1, duration: dur * 0.1, ease: 'power1.inOut' }, at + dur * 0.24);
+    tl.to(state, { pop: 1, duration: dur * 0.12, ease: 'none' }, at + dur * 0.27);
+    tl.to(state, { pop: 0, duration: dur * 0.06, ease: 'power2.in' }, at + dur * 0.85);
+    tl.to(state, { dim: 0, duration: dur * 0.07, ease: 'power1.inOut' }, at + dur * 0.85);
+    set(tl, { focus: '', popParts: '' }, at + dur * 0.93);
     tl.to(state.vis, { [spec.beat]: 1, duration: dur * 0.08, ease: 'power2.out' }, at + dur * (CONTENT_IN - 0.06));
     tl.to(state.prog, { [spec.beat]: 1, duration: dur * (CONTENT_OUT - CONTENT_IN - 0.04) }, at + dur * CONTENT_IN);
     tl.to(state.vis, { [spec.beat]: 0, duration: dur * 0.07, ease: 'power1.in' }, at + dur * CONTENT_OUT);
@@ -107,12 +101,11 @@ const assemble: Chapter = {
     set(tl, { face: 'idle' }, at + dur * 0.5);
     tl.fromTo(state, { assembleBounce: 0 }, { assembleBounce: 1, duration: dur * 0.16, ease: 'none', immediateRender: false }, at + dur * 0.78);
     set(tl, { face: 'happy' }, at + dur * 0.84);
-    spotTo(tl, 'lime-edge', at + dur * 0.7, dur * 0.25, 1.05);
   },
 };
 
-// 2 · Speaking: hops to the left, low push-in on the face while the voice plays on the right. The
-// mouth moves while each line types out and rests between them.
+// 2 · Speaking: hops to the left; the face screen slides forward out of the visor while the voice
+// plays on the right. The mouth moves while each line types out and rests between them.
 const speaking: Chapter = {
   id: 'speaking',
   build(tl, at, dur, ctx) {
@@ -126,38 +119,40 @@ const speaking: Chapter = {
     }
     faces.push([0.88, 'happy']);
     beat({
-      beat: 'speaking', frame: ['body', 'screen'],
+      beat: 'speaking', frame: ['body', 'screen'], pop: ['screen'],
       from: { yaw: -34, pitch: -8, rScale: 1.12 }, drift: { yaw: -16, pitch: 2, rScale: 0.98 },
       faces,
     })(tl, at, dur, ctx);
   },
 };
 
-// 3 · Hearing: crosses to the right and turns its sensory patch toward the transcript on the left.
+// 3 · Hearing: crosses to the right; both sensory patches lift off its sides while it listens.
 const hearing: Chapter = {
   id: 'hearing',
   build: beat({
-    beat: 'hearing', frame: ['body', 'patchR'],
+    beat: 'hearing', frame: ['body', 'patchR'], pop: ['patchL', 'patchR'], keep: ['screen'],
     from: { yaw: -46, pitch: 10, rScale: 1.18 }, drift: { yaw: -70, pitch: 3, rScale: 1.06 },
     faces: [[0.3, 'listening'], [0.88, 'happy']],
   }),
 };
 
-// 4 · Thinking: back to the left; the camera cranes up and looks down on it while it reasons.
+// 4 · Thinking: back to the left; the main board slides out of its body toward the copy, traces
+// lit, while the camera cranes up and looks down on it.
 const thinking: Chapter = {
   id: 'thinking',
   build: beat({
-    beat: 'thinking', frame: ['body', 'stemL', 'tipL', 'hook'],
+    beat: 'thinking', frame: ['body', 'chassis'], pop: ['chassis'], keep: ['screen'],
     from: { yaw: -22, pitch: 42, rScale: 1.2 }, drift: { yaw: -8, pitch: 22, rScale: 1.06 },
     faces: [[0.3, 'thinking'], [0.9, 'happy']],
   }),
 };
 
-// 5 · Knowledge: to the right, low angle; sources fly out of the card on the left into its antenna.
+// 5 · Knowledge: to the right, low angle; the memory module slides out toward the card on the left
+// and the sources fly into it.
 const knowledge: Chapter = {
   id: 'knowledge',
   build: beat({
-    beat: 'knowledge', frame: ['body', 'hook'],
+    beat: 'knowledge', frame: ['body', 'memory'], pop: ['memory'], keep: ['screen'],
     from: { yaw: -36, pitch: -20, rScale: 1.2 }, drift: { yaw: -16, pitch: -6, rScale: 1.08 },
     faces: [[0.3, 'working'], [0.9, 'happy']],
   }),
@@ -168,7 +163,7 @@ const acting: Chapter = {
   id: 'acting',
   build(tl, at, dur, ctx) {
     beat({
-      beat: 'acting', frame: ['body', 'clawL', 'clawR'],
+      beat: 'acting', frame: ['body', 'clawL', 'clawR'], pop: ['clawL', 'clawR'], keep: ['screen', 'armL', 'armR'],
       from: { yaw: -46, pitch: 6, rScale: 1.14 }, drift: { yaw: -20, pitch: 10, rScale: 1.04 },
       faces: [[0.3, 'working'], [0.9, 'happy']],
     })(tl, at, dur, ctx);

@@ -11,6 +11,8 @@ export interface ShotOpts {
   sx?: number; sy?: number;
   /** Vertical offset in portrait, where the copy sits on top. */
   syPortrait?: number;
+  /** Frame these parts where they sit when popped out for their beat. */
+  popped?: PartId[];
   rScalePortrait?: number;
 }
 
@@ -22,8 +24,6 @@ export interface Ctx {
   /** Where the Double stands this chapter (landscape), and the matching subject offset (0 in portrait). */
   place: 'center' | 'left' | 'right';
   sx: number;
-  /** Chapter accent (eyebrow dot token), used to tint the spotlight. */
-  dot?: string;
   /** Model turn (deg) before/after this chapter's crossing: one full twirl in the travel direction. */
   rotFrom: number;
   rotTo: number;

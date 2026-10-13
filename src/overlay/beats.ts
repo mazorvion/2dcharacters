@@ -112,7 +112,8 @@ function thinking(): BeatView {
   const dots = [...card.querySelectorAll<HTMLElement>('.ov-dots i')];
   let last = '';
   return {
-    beat: 'thinking', card, part: 'tipL', local: [0.2, 0.08, 0], thought: true,
+    // the main board, pulled out of the body toward the card (its right edge faces the copy)
+    beat: 'thinking', card, part: 'chassis', local: [0.37, 0.05, 0.03], thought: true,
     update(p, time) {
       const n = steps.length;
       const states = steps.map((_, k) => (p >= itemAt(k + 1, n) - 0.02 ? 'done' : p >= itemAt(k, n) ? 'active' : 'todo'));
@@ -150,8 +151,8 @@ function knowledge(overlay: HTMLElement, stage: Stage): BeatView {
   });
   let shownN = -1;
   return {
-    // sources drop into the lime antenna ball, the side of the head facing the card
-    beat: 'knowledge', card, part: 'tipL', local: [0, 0, 0], layer: fly,
+    // sources drop into the memory module, pulled out of the body toward the card (its left end)
+    beat: 'knowledge', card, part: 'memory', local: [-0.2, 0.02, 0.03], layer: fly,
     update(p, _time, a, box) {
       const portrait = stage.profile === 'portrait';
       // sources stack up just outside the card, on the side facing the Double, then fly into it

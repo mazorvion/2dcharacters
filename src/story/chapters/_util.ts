@@ -7,10 +7,10 @@ export const camTo = (tl: GSAPTimeline, cam: Cam, at: number, dur: number, ease 
 export const to = (tl: GSAPTimeline, vars: GSAPTweenVars, at: number, dur: number, ease = 'none') =>
   tl.to(state, { ...vars, duration: dur, ease }, at);
 
-export type Discrete = { at: number; vars: Partial<Record<'face' | 'faceIcon' | 'focus', string | null>> };
+export type Discrete = { at: number; vars: Partial<Record<'face' | 'faceIcon' | 'focus' | 'popParts', string | null>> };
 
 /**
- * Discrete values (face, focus, icon) are keyframes resolved from the timeline time on every update
+ * Discrete values (face, focus, pop parts, icon) are keyframes resolved from the timeline time on every update
  * (see timeline.ts), so any jump or reverse scrub always lands on the right value.
  */
 export const set = (tl: GSAPTimeline, vars: Discrete['vars'], at: number) => {
