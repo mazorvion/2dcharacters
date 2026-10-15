@@ -1,0 +1,25 @@
+---
+/**
+ * The Double · exploded-view scroll story (source version: edit freely).
+ * Static markup is rendered here on the server from lib/double-story/content.ts, so the copy is in
+ * the HTML even without JavaScript; the 3D story boots on the client (code-split, loads lazily).
+ *
+ *   <DoubleStory />                        smooth scroll on
+ *   <DoubleStory smoothScroll={false} />   the page already runs Lenis (or another smooth scroller)
+ */
+import { storyMarkup } from '../lib/double-story/markup';
+import '../lib/double-story/story-styles';
+
+interface Props {
+  /** Lenis smooth scrolling while the story runs. Default true. */
+  smoothScroll?: boolean;
+}
+const { smoothScroll = true } = Astro.props;
+const markup = storyMarkup();
+const html = smoothScroll ? markup : markup.replace('<section id="double-story"', '<section id="double-story" data-smooth-scroll="false"');
+---
+<Fragment set:html={html} />
+<script>
+  // mounts every #double-story on the page; handles Astro view transitions (<ClientRouter />)
+  import '../lib/double-story/embed';
+</script>

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "icons": "node scripts/build-icons.ts",
     "build:astro": "node scripts/build-astro.ts",
-    "build:preview": "node scripts/build-preview.ts"
+    "build:preview": "node scripts/build-preview.ts",
+    "pack:source": "bash scripts/pack-source.sh"
   },
   "dependencies": {
     "@fontsource-variable/funnel-display": "^5.3.0",
